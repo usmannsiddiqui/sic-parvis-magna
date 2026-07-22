@@ -1,0 +1,8 @@
+dist/
+.astro/
+pnpm-lock.yaml
+node_modules/
+.claude/
+
+# One-way synced copies from the Obsidian vault — never reformatted locally
+docs/
