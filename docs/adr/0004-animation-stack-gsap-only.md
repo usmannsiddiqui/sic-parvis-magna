@@ -53,6 +53,16 @@ for one job.
   declarative component animation — then Framer Motion may be added, **scoped to
   that one island**, not project-wide. Revisit this ADR at that point.
 
-## Parked (visual-design pass)
-- The *amount* and taste of motion (how cinematic vs. restrained) — a design
-  decision, separate from this library choice.
+## Resolved in the visual-design pass (Session 3 — 2026-07-22)
+Motion amount and taste = **restrained, with exactly ONE signature move**: a
+short, subtle featured-hero scroll transition (image starts near-full-width and
+settles to grid-width as the reader scrolls), **home page only**, built as
+progressive enhancement over a static baseline. Hard limits: no pinned scrolling,
+no scroll-jacking, no section-wide parallax, nothing that delays reaching the
+essays. Everywhere else: a gentle load fade/rise and soft card-hover elevation
+only. Article pages stay especially calm. On small screens, simplify or drop the
+hero effect if it gets cramped or janky. Under `prefers-reduced-motion`, a fully
+static layout with no transition. **Prototype-gated:** validate the hero effect
+with a small motion prototype (Phase 1) before treating its exact behavior as
+final; if it reads gimmicky, downgrade it without reopening the broader motion
+direction.
