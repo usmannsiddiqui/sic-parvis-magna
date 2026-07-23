@@ -35,7 +35,12 @@ const fmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', d
     {
       data.coverImage && (
         <figure class="essay__cover">
-          <Image src={data.coverImage} alt="" widths={[720, 1080]} sizes="(min-width: 1080px) 1080px, 100vw" />
+          <Image
+            src={data.coverImage}
+            alt=""
+            widths={[720, 1080]}
+            sizes="(min-width: 1080px) 1080px, 100vw"
+          />
           <figcaption>Cover: original pixel art, AI-assisted</figcaption>
         </figure>
       )
