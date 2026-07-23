@@ -1,0 +1,28 @@
+/* Design tokens — canonical palette from design.md §8 / build-order.
+   Light is the default; dark is applied via [data-theme="dark"]. */
+:root,
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --surface: #f5f4f2;
+  --text: #241f1a;
+  --muted: rgba(36, 31, 26, 0.62);
+  --faint: rgba(36, 31, 26, 0.4);
+  --border: rgba(0, 0, 0, 0.1);
+  --fire: #96591f; /* firelight accent — links, active states */
+  --sage: #3c5c48; /* secondary accent — tags */
+  --ph1: #ececea; /* cover placeholder gradient stop 1 */
+  --ph2: #e2e1de; /* cover placeholder gradient stop 2 */
+}
+
+:root[data-theme='dark'] {
+  --bg: #12161c;
+  --surface: #1a2029;
+  --text: #e7e2d6;
+  --muted: rgba(231, 226, 214, 0.6);
+  --faint: rgba(231, 226, 214, 0.32);
+  --border: rgba(231, 226, 214, 0.12);
+  --fire: #d99a54;
+  --sage: #7ea08a;
+  --ph1: #232a33;
+  --ph2: #2b3540;
+}

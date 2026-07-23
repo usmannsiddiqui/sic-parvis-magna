@@ -1,0 +1,52 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@import './tokens.css';
+
+/* Map tokens into Tailwind v4 theme so utilities like text-fire / bg-bg work. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-border: var(--border);
+  --color-fire: var(--fire);
+  --color-sage: var(--sage);
+  --font-serif: 'Literata Variable', Georgia, serif;
+  --font-sans: 'Instrument Sans Variable', system-ui, sans-serif;
+  --font-arabic: 'Amiri', serif;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--fire);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--sage);
+}
+
+/* Visible focus for keyboard users (a11y baseline). */
+:focus-visible {
+  outline: 2px solid var(--fire);
+  outline-offset: 2px;
+}
