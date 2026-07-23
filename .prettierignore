@@ -6,3 +6,7 @@ node_modules/
 
 # One-way synced copies from the Obsidian vault — never reformatted locally
 docs/
+
+# Authored authority docs encoding locked decisions — never auto-reformatted
+PRODUCT.md
+DESIGN.md

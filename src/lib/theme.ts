@@ -10,11 +10,7 @@ export function nextTheme(current: Theme): Theme {
   return current === 'dark' ? 'light' : 'dark';
 }
 
-export function applyTheme(
-  theme: Theme,
-  doc: Document,
-  storage: Pick<Storage, 'setItem'>,
-): void {
+export function applyTheme(theme: Theme, doc: Document, storage: Pick<Storage, 'setItem'>): void {
   doc.documentElement.setAttribute('data-theme', theme);
   try {
     storage.setItem('spm-theme', theme);
