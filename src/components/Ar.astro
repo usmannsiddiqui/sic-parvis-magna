@@ -1,0 +1,14 @@
+---
+// Inline Arabic run for single words/short terms inside LTR prose (ADR 0005).
+// <bdi> + unicode-bidi:isolate keeps it from reordering surrounding Latin.
+---
+
+<bdi class="ar" lang="ar"><slot /></bdi>
+
+<style>
+  .ar {
+    font-family: var(--font-arabic);
+    unicode-bidi: isolate;
+    font-size: 1.08em;
+  }
+</style>
