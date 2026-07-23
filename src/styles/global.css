@@ -92,3 +92,50 @@ a:hover {
   font-size: 15px;
   line-height: 1.55;
 }
+
+/* Long-form prose: re-theme @tailwindcss/typography to design tokens. */
+.prose {
+  --tw-prose-body: var(--text);
+  --tw-prose-headings: var(--text);
+  --tw-prose-links: var(--fire);
+  --tw-prose-bold: var(--text);
+  --tw-prose-counters: var(--muted);
+  --tw-prose-bullets: var(--faint);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--text);
+  --tw-prose-quote-borders: var(--sage);
+  --tw-prose-captions: var(--muted);
+  --tw-prose-code: var(--text);
+  --tw-prose-pre-bg: transparent;
+  max-width: 680px;
+  margin-inline: auto;
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.7;
+}
+.prose :is(h2, h3) {
+  font-family: var(--font-serif);
+  scroll-margin-top: 24px;
+}
+
+/* GFM footnotes ([^1]) — real inline marker + endnote list (design.md §6). */
+.prose .footnotes {
+  max-width: 680px;
+  margin: 50px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+  color: var(--muted);
+}
+.prose .footnotes h2 {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.prose a[data-footnote-ref],
+.prose sup a {
+  color: var(--fire);
+  text-decoration: none;
+  font-variant-numeric: normal;
+}
