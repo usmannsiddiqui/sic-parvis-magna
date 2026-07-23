@@ -41,10 +41,9 @@ test.describe('shell accessibility', () => {
 });
 
 test.describe('reduced motion', () => {
-  test.use({ reducedMotion: 'reduce' });
   test('hero has no scroll transform under reduced motion', async ({ page }) => {
-    // test.use({ reducedMotion }) doesn't reliably apply before first navigation here;
-    // emulateMedia is the robust way to force the media feature ahead of goto.
+    // emulateMedia is the robust way to force the media feature ahead of goto
+    // (test.use({ reducedMotion }) doesn't reliably apply before first navigation here).
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     const el = page.locator('[data-hero]');

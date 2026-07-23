@@ -22,20 +22,22 @@ const { title, description = 'Field notes on discipline, faith, and self-account
     <meta name="description" content={description} />
     <title>{title}</title>
 
-    {/* No-FOUC: stamp the resolved theme before first paint.
-        Mirrors resolveInitialTheme() in src/lib/theme.ts (kept in sync + unit-tested there). */}
+    {
+      /* No-FOUC: stamp the resolved theme before first paint.
+        Mirrors resolveInitialTheme() in src/lib/theme.ts (kept in sync + unit-tested there). */
+    }
     <script is:inline>
       (function () {
         try {
-          var stored = localStorage.getItem('spm-theme');
-          var theme =
+          const stored = localStorage.getItem('spm-theme');
+          const theme =
             stored === 'light' || stored === 'dark'
               ? stored
               : window.matchMedia('(prefers-color-scheme: dark)').matches
                 ? 'dark'
                 : 'light';
           document.documentElement.setAttribute('data-theme', theme);
-        } catch (e) {
+        } catch {
           document.documentElement.setAttribute('data-theme', 'light');
         }
       })();
