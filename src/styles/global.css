@@ -72,3 +72,23 @@ a:hover {
   clip: auto;
   white-space: normal;
 }
+
+/* Code blocks: Shiki emits raw light/dark vars (defaultColor:false); switch by theme. */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+[data-theme='dark'] .astro-code,
+[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+}
+.astro-code {
+  padding: 16px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  font-size: 15px;
+  line-height: 1.55;
+}

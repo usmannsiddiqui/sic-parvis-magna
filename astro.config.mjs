@@ -10,9 +10,16 @@ export default defineConfig({
 
   trailingSlash: 'never',
 
+  integrations: [mdx()],
+
+  markdown: {
+    shikiConfig: {
+      themes: { light: 'github-light', dark: 'github-dark' },
+      defaultColor: false, // emit raw --shiki-light / --shiki-dark vars; we switch them by [data-theme]
+    },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
-
-  integrations: [mdx()],
 });
