@@ -1,0 +1,46 @@
+---
+interface Props {
+  translation?: string;
+  cite?: string;
+}
+const { translation, cite } = Astro.props;
+---
+
+<figure class="arabic-quote">
+  <blockquote class="arabic-quote__text" dir="rtl" lang="ar">
+    <slot />
+  </blockquote>
+  {translation && <figcaption class="arabic-quote__translation">{translation}</figcaption>}
+  {cite && <cite class="arabic-quote__cite">{cite}</cite>}
+</figure>
+
+<style>
+  .arabic-quote {
+    max-width: 680px;
+    margin: 40px auto;
+    padding: 0;
+    text-align: center;
+  }
+  .arabic-quote__text {
+    margin: 0;
+    font-family: var(--font-arabic);
+    font-size: 34px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .arabic-quote__translation {
+    margin-top: 12px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--muted);
+  }
+  .arabic-quote__cite {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-size: 13px;
+    color: var(--faint);
+  }
+</style>
