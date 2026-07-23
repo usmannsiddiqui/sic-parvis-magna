@@ -1,0 +1,37 @@
+---
+import type { EssayListItem } from '../lib/essays';
+import EssayCard from './EssayCard.astro';
+
+interface Props {
+  essays: EssayListItem[];
+  empty?: string;
+}
+const { essays, empty = 'No essays here yet.' } = Astro.props;
+---
+
+{
+  essays.length === 0 ? (
+    <p class="empty">{empty}</p>
+  ) : (
+    <ul class="list" role="list">
+      {essays.map((essay) => (
+        <li>
+          <EssayCard essay={essay} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .empty {
+    font-family: var(--font-sans);
+    color: var(--muted);
+    padding: 26px 0;
+  }
+</style>
