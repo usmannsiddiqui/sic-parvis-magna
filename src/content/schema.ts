@@ -1,5 +1,4 @@
 import { z } from 'astro:content';
-import type { SchemaContext } from 'astro:content';
 
 /** Essay categories (design.md §6). Notes is deferred — do not add it. */
 export const CATEGORIES = ['Discipline', 'Faith', 'Reflections'] as const;
@@ -14,7 +13,7 @@ export function essaySchema({
   image,
   reference,
 }: {
-  image: SchemaContext['image'];
+  image: () => z.ZodTypeAny;
   reference: (collection: string) => z.ZodTypeAny;
 }) {
   return z.object({
