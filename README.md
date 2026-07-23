@@ -22,6 +22,9 @@ pnpm build       # production build to dist/
 pnpm preview     # preview the production build
 ```
 
+Node 24 LTS (see `.nvmrc`) — some devDependencies reject Node's odd-numbered
+"Current" releases (e.g. 25.x), so pin to 24.16.0+ if `pnpm install` fails.
+
 Quality gates:
 
 ```bash
