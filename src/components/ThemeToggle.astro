@@ -1,0 +1,45 @@
+---
+// Theme toggle island. Markup renders static; the module script hydrates the button.
+---
+
+<button id="theme-toggle" type="button" aria-label="Toggle color theme" class="theme-toggle">
+  <svg class="icon-dark" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+    <circle cx="8" cy="8" r="6" fill="var(--fire)"></circle>
+    <circle cx="10.6" cy="6.4" r="5" fill="var(--bg)"></circle>
+  </svg>
+  <svg class="icon-light" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+    <circle cx="8" cy="8" r="4.4" fill="var(--fire)"></circle>
+  </svg>
+</button>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+  /* Show the icon that represents the CURRENT theme. */
+  :global(html[data-theme='dark']) .theme-toggle .icon-light {
+    display: none;
+  }
+  :global(html[data-theme='light']) .theme-toggle .icon-dark {
+    display: none;
+  }
+</style>
+
+<script>
+  import { nextTheme, applyTheme, type Theme } from '../lib/theme';
+
+  const btn = document.getElementById('theme-toggle');
+  btn?.addEventListener('click', () => {
+    const current = (document.documentElement.getAttribute('data-theme') as Theme) ?? 'light';
+    applyTheme(nextTheme(current), document, localStorage);
+  });
+</script>

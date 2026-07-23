@@ -1,0 +1,61 @@
+---
+import '@fontsource-variable/literata';
+import '@fontsource-variable/instrument-sans';
+import '@fontsource/amiri';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Field notes on discipline, faith, and self-accountability.' } =
+  Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+
+    {/* No-FOUC: stamp the resolved theme before first paint.
+        Mirrors resolveInitialTheme() in src/lib/theme.ts (kept in sync + unit-tested there). */}
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('spm-theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-surface focus:px-4 focus:py-2"
+    >
+      Skip to content
+    </a>
+    <header>
+      <slot name="header" />
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer>
+      <slot name="footer" />
+    </footer>
+  </body>
+</html>

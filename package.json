@@ -22,16 +22,27 @@
     "test:a11y": "playwright test"
   },
   "dependencies": {
-    "astro": "^5.0.0"
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/literata": "^5.3.0",
+    "@fontsource/amiri": "^5.3.0",
+    "@tailwindcss/typography": "^0.5.20",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^5.0.0",
+    "gsap": "^3.15.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
     "astro-eslint-parser": "^3.0.0",
     "eslint": "^10.7.0",
     "eslint-plugin-astro": "^3.0.1",
+    "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
     "typescript": "^5.6.0",
-    "typescript-eslint": "^8.65.0"
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
   }
 }

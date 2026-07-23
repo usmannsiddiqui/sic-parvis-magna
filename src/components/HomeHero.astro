@@ -1,0 +1,107 @@
+---
+interface Props {
+  title: string;
+  meta: string;
+  href: string;
+}
+const { title, meta, href } = Astro.props;
+---
+
+<section class="hero-wrap">
+  <a href={href} class="hero" data-hero>
+    <div class="hero-scrim"></div>
+    <div class="hero-body">
+      <div class="hero-kicker">Featured</div>
+      <h1 class="hero-title">{title}</h1>
+      <div class="hero-meta">{meta}</div>
+    </div>
+  </a>
+</section>
+
+<style>
+  .hero-wrap {
+    max-width: 1200px;
+    margin: 40px auto 0;
+    padding: 0 32px;
+  }
+  .hero {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    overflow: hidden;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    transform-origin: top center;
+    will-change: transform;
+    background:
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 18px),
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 18px),
+      linear-gradient(150deg, var(--ph1) 0%, var(--ph2) 60%, var(--ph1) 100%);
+  }
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      rgba(9, 11, 15, 0.9) 0%,
+      rgba(9, 11, 15, 0.45) 42%,
+      transparent 72%
+    );
+  }
+  .hero-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 24px 40px;
+    text-align: center;
+  }
+  .hero-kicker {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--fire);
+    margin-bottom: 14px;
+  }
+  .hero-title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(30px, 4.4vw, 58px);
+    line-height: 1.05;
+    color: #f4efe4;
+    margin: 0 auto;
+    max-width: 760px;
+    text-wrap: balance;
+  }
+  .hero-meta {
+    font-family: var(--font-sans);
+    font-size: 13.5px;
+    color: rgba(244, 239, 228, 0.72);
+    margin-top: 16px;
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const el = document.querySelector<HTMLElement>('[data-hero]');
+
+  // Progressive enhancement: only enhance on wide viewports, motion allowed, and element present.
+  if (el && !prefersReduced && window.innerWidth >= 760) {
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.to(el, {
+      scale: 0.89,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: el,
+        start: 'top top',
+        end: '+=420',
+        scrub: true,
+      },
+    });
+  }
+</script>
