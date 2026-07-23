@@ -28,3 +28,7 @@ coverage/
 .claude/skills/
 .claude/settings.local.json
 .impeccable/
+
+# Design wireframe bundle — contains watermarked third-party reference images
+# (someone else's copyright, per design.md). Local-only; never commit to this public repo.
+sic-parvis-magna-home/
