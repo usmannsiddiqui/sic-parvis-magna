@@ -1,0 +1,66 @@
+---
+import type { TocEntry } from '../lib/toc';
+
+interface Props {
+  entries: TocEntry[];
+}
+const { entries } = Astro.props;
+---
+
+<nav class="toc" aria-label="Table of contents">
+  <p class="toc__title">Contents</p>
+  <ol class="toc__list">
+    {
+      entries.map((e) => (
+        <li>
+          <a href={`#${e.slug}`}>{e.text}</a>
+          {e.children.length > 0 && (
+            <ol class="toc__sublist">
+              {e.children.map((c) => (
+                <li>
+                  <a href={`#${c.slug}`}>{c.text}</a>
+                </li>
+              ))}
+            </ol>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  .toc {
+    max-width: 680px;
+    margin: 40px auto 0;
+    padding: 18px 22px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+  }
+  .toc__title {
+    margin: 0 0 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: none;
+  }
+  .toc__list,
+  .toc__sublist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .toc__list > li {
+    margin: 6px 0;
+  }
+  .toc__sublist {
+    padding-left: 16px;
+  }
+  .toc a {
+    color: var(--text);
+  }
+  .toc a:hover {
+    color: var(--fire);
+  }
+</style>
