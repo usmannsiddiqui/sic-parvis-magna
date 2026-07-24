@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<BaseLayout title="About — Sic Parvis Magna">
+  <SiteNav slot="header" />
+
+  <article class="about">
+    <h1 class="about__title">About</h1>
+
+    <!-- PLACEHOLDER COPY — factual, temporary. Replace with owner-written prose before merge. -->
+    <div class="about__prose prose">
+      <p>
+        Sic Parvis Magna is a solo-authored essay site by Muhammad Usman Siddiqui. It collects
+        long-form writing on discipline, faith, self-accountability, and reflection.
+      </p>
+      <p>
+        The site is static and text-first: essays are written in MDX and published by committing to
+        a public git repository. There is no comment system, tracking, or newsletter.
+      </p>
+
+      <h2 id="colophon">Colophon</h2>
+      <p>
+        Built with Astro. Type is set in Literata (body and headings), Instrument Sans (interface
+        text), and Amiri (Arabic quotations). Cover art, where present, is original pixel art,
+        AI-assisted; each cover carries its own credit.
+      </p>
+      <p>
+        The site code is licensed under the MIT License. The essays are licensed under Creative
+        Commons Attribution-NonCommercial-NoDerivatives 4.0 (CC BY-NC-ND 4.0).
+      </p>
+    </div>
+  </article>
+
+  <SiteFooter slot="footer" />
+</BaseLayout>
+
+<style>
+  .about {
+    max-width: 680px;
+    margin: 56px auto 0;
+    padding: 0 28px;
+  }
+  .about__title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(32px, 4.8vw, 52px);
+    color: var(--text);
+    margin: 0 0 24px;
+  }
+</style>
