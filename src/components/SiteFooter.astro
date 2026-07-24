@@ -1,0 +1,47 @@
+---
+const year = 2026; // static build; bump manually or wire to build date in Phase 8
+---
+
+<footer class="site-footer" aria-label="Site footer">
+  <nav class="site-footer__nav" aria-label="Footer">
+    <a href="/writing">Writing</a>
+    <a href="/topics">Topics</a>
+    <a href="/about">About</a>
+    <a href="/about#colophon">Colophon</a>
+  </nav>
+  <p class="site-footer__legal">
+    © {year} Muhammad Usman Siddiqui. Code under MIT; essays under CC BY-NC-ND 4.0.
+  </p>
+</footer>
+
+<style>
+  .site-footer {
+    max-width: 1200px;
+    margin: 80px auto 0;
+    padding: 28px 32px 48px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-sans);
+    font-size: 14px;
+  }
+  .site-footer__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-bottom: 12px;
+  }
+  .site-footer__nav a {
+    color: var(--text);
+  }
+  .site-footer__nav a:hover {
+    color: var(--fire);
+  }
+  .site-footer__legal {
+    color: var(--muted);
+    margin: 0;
+  }
+  @media (max-width: 640px) {
+    .site-footer {
+      padding: 24px 20px 40px;
+    }
+  }
+</style>

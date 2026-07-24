@@ -1,7 +1,18 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HomeHero from '../components/HomeHero.astro';
 import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import EssayList from '../components/EssayList.astro';
+import { toListItem } from '../lib/to-list-item';
+import { publishedSorted, selectFeatured, latestEssays } from '../lib/essays';
+import { formatDate } from '../lib/format';
+
+const LATEST_COUNT = 6;
+const published = publishedSorted((await getCollection('writing')).map(toListItem));
+const featured = selectFeatured(published);
+const latest = latestEssays(published, featured?.slug, LATEST_COUNT);
 ---
 
 <BaseLayout title="Sic Parvis Magna">
@@ -13,11 +24,22 @@ import SiteNav from '../components/SiteNav.astro';
     </p>
   </section>
 
-  <HomeHero
-    title="The Loop Invariant of Faith"
-    meta="Oct 12, 2026 · 8 min read · Reflections"
-    href="/writing"
-  />
+  {
+    featured && (
+      <HomeHero
+        title={featured.title}
+        meta={`${formatDate(featured.pubDate)} · ${featured.readingTimeLabel} · ${featured.category}`}
+        href={`/writing/${featured.slug}`}
+      />
+    )
+  }
+
+  <section class="latest">
+    <h2 class="latest__heading">Latest</h2>
+    <EssayList essays={latest} empty="Essays are on the way." />
+  </section>
+
+  <SiteFooter slot="footer" />
 </BaseLayout>
 
 <style>
@@ -32,10 +54,26 @@ import SiteNav from '../components/SiteNav.astro';
     line-height: 1.72;
     color: var(--muted);
   }
+  .latest {
+    max-width: 820px;
+    margin: 64px auto 0;
+    padding: 0 32px;
+  }
+  .latest__heading {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 8px;
+  }
   @media (max-width: 640px) {
+    .intro,
+    .latest {
+      padding: 0 20px;
+    }
     .intro {
       margin-top: 24px;
-      padding: 0 20px;
     }
     .intro__lede {
       font-size: 18px;

@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+
+<BaseLayout title="Not found — Sic Parvis Magna">
+  <SiteNav slot="header" />
+
+  <section class="notfound">
+    <p class="notfound__code">404</p>
+    <h1 class="notfound__title">This page wandered off.</h1>
+    <p class="notfound__body">
+      The page you asked for isn't here. Try the <a href="/writing">writing index</a> or the
+      <a href="/">home page</a>.
+    </p>
+  </section>
+
+  <SiteFooter slot="footer" />
+</BaseLayout>
+
+<style>
+  .notfound {
+    max-width: 680px;
+    margin: 80px auto 0;
+    padding: 0 28px;
+    text-align: center;
+  }
+  .notfound__code {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--fire);
+    margin: 0 0 8px;
+  }
+  .notfound__title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(28px, 4vw, 40px);
+    color: var(--text);
+    margin: 0 0 14px;
+  }
+  .notfound__body {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+</style>
