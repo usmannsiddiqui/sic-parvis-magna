@@ -1,0 +1,65 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteNav from '../../components/SiteNav.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import EssayList from '../../components/EssayList.astro';
+import { toListItem } from '../../lib/to-list-item';
+import { publishedSorted, chunk } from '../../lib/essays';
+
+const PAGE_SIZE = 10;
+const published = publishedSorted((await getCollection('writing')).map(toListItem));
+const pages = chunk(published, PAGE_SIZE);
+const items = pages[0] ?? [];
+const hasNext = pages.length > 1;
+---
+
+<BaseLayout title="Writing — Sic Parvis Magna">
+  <SiteNav slot="header" />
+
+  <section class="index">
+    <h1 class="index__title">Writing</h1>
+    <EssayList essays={items} empty="Essays are on the way." />
+    {
+      hasNext && (
+        <nav class="pager" aria-label="Pagination">
+          <a class="pager__next" href="/writing/page/2">
+            Older essays →
+          </a>
+        </nav>
+      )
+    }
+  </section>
+
+  <SiteFooter slot="footer" />
+</BaseLayout>
+
+<style>
+  .index {
+    max-width: 820px;
+    margin: 48px auto 0;
+    padding: 0 32px;
+  }
+  .index__title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(30px, 4vw, 44px);
+    color: var(--text);
+    margin: 0 0 12px;
+  }
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 32px;
+    font-family: var(--font-sans);
+    font-size: 15px;
+  }
+  .pager__next {
+    margin-left: auto;
+  }
+  @media (max-width: 640px) {
+    .index {
+      padding: 0 20px;
+    }
+  }
+</style>

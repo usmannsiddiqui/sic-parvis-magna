@@ -1,0 +1,82 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteNav from '../../../components/SiteNav.astro';
+import SiteFooter from '../../../components/SiteFooter.astro';
+import EssayList from '../../../components/EssayList.astro';
+import { toListItem } from '../../../lib/to-list-item';
+import { publishedSorted, chunk } from '../../../lib/essays';
+
+export async function getStaticPaths() {
+  const PAGE_SIZE = 10;
+  const published = publishedSorted((await getCollection('writing')).map(toListItem));
+  const pages = chunk(published, PAGE_SIZE);
+  // Page 1 lives at /writing; generate 2..N here.
+  return pages.slice(1).map((items, i) => ({
+    params: { page: String(i + 2) },
+    props: { items, pageNum: i + 2, lastPage: pages.length },
+  }));
+}
+
+const { items, pageNum, lastPage } = Astro.props;
+const prevHref = pageNum === 2 ? '/writing' : `/writing/page/${pageNum - 1}`;
+const hasNext = pageNum < lastPage;
+---
+
+<BaseLayout title={`Writing (page ${pageNum}) — Sic Parvis Magna`}>
+  <SiteNav slot="header" />
+
+  <section class="index">
+    <h1 class="index__title">Writing</h1>
+    <p class="index__page">Page {pageNum} of {lastPage}</p>
+    <EssayList essays={items} />
+    <nav class="pager" aria-label="Pagination">
+      <a class="pager__prev" href={prevHref}> ← Newer essays </a>
+      {
+        hasNext && (
+          <a class="pager__next" href={`/writing/page/${pageNum + 1}`}>
+            Older essays →
+          </a>
+        )
+      }
+    </nav>
+  </section>
+
+  <SiteFooter slot="footer" />
+</BaseLayout>
+
+<style>
+  .index {
+    max-width: 820px;
+    margin: 48px auto 0;
+    padding: 0 32px;
+  }
+  .index__title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(30px, 4vw, 44px);
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+  .index__page {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 32px;
+    font-family: var(--font-sans);
+    font-size: 15px;
+  }
+  .pager__next {
+    margin-left: auto;
+  }
+  @media (max-width: 640px) {
+    .index {
+      padding: 0 20px;
+    }
+  }
+</style>
