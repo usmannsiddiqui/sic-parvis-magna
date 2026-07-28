@@ -6,6 +6,11 @@ import SiteNav from './SiteNav.astro';
 import TableOfContents from './TableOfContents.astro';
 import { readingTimeLabel } from '../lib/reading-time';
 import { buildToc } from '../lib/toc';
+import { getCollection } from 'astro:content';
+import { toListItem } from '../lib/to-list-item';
+import { publishedSorted } from '../lib/essays';
+import { relatedEssays } from '../lib/related';
+import ArticleGrid from './ArticleGrid.astro';
 
 interface Props {
   entry: CollectionEntry<'writing'>;
@@ -15,6 +20,8 @@ const { entry, headings } = Astro.props;
 const { data } = entry;
 const toc = buildToc(headings);
 const showToc = toc.length >= 3;
+const allEssays = publishedSorted((await getCollection('writing')).map(toListItem));
+const related = relatedEssays(toListItem(entry), allEssays, 3);
 const fmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 ---
 
@@ -51,6 +58,17 @@ const fmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', d
     <div class="essay__prose prose">
       <slot />
     </div>
+
+    {
+      related.length > 0 && (
+        <section class="essay__related" aria-labelledby="related-heading">
+          <h2 id="related-heading" class="essay__related-heading">
+            Related
+          </h2>
+          <ArticleGrid essays={related} />
+        </section>
+      )
+    }
 
     <footer class="essay__share">
       <span>Share this essay</span>
@@ -119,5 +137,19 @@ const fmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', d
     font-family: var(--font-sans);
     font-size: 14px;
     color: var(--muted);
+  }
+  .essay__related {
+    max-width: 1200px;
+    margin: 64px auto 0;
+    padding: 40px 28px 0;
+    border-top: 1px solid var(--border);
+  }
+  .essay__related-heading {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 20px;
   }
 </style>

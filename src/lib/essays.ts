@@ -1,3 +1,5 @@
+import type { ImageMetadata } from 'astro';
+
 export interface EssayListItem {
   slug: string;
   title: string;
@@ -8,6 +10,7 @@ export interface EssayListItem {
   featured: boolean;
   draft: boolean;
   readingTimeLabel: string;
+  coverImage?: ImageMetadata;
 }
 
 /** Non-draft essays, newest first; pubDate ties broken by title asc (stable builds). */

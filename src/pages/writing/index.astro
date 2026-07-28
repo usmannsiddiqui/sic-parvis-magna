@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteNav from '../../components/SiteNav.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
-import EssayList from '../../components/EssayList.astro';
+import ArticleGrid from '../../components/ArticleGrid.astro';
 import { toListItem } from '../../lib/to-list-item';
 import { publishedSorted, chunk } from '../../lib/essays';
 
@@ -19,7 +19,7 @@ const hasNext = pages.length > 1;
 
   <section class="index">
     <h1 class="index__title">Writing</h1>
-    <EssayList essays={items} empty="Essays are on the way." />
+    <ArticleGrid essays={items} empty="Essays are on the way." />
     {
       hasNext && (
         <nav class="pager" aria-label="Pagination">
@@ -36,7 +36,7 @@ const hasNext = pages.length > 1;
 
 <style>
   .index {
-    max-width: 820px;
+    max-width: 1200px;
     margin: 48px auto 0;
     padding: 0 32px;
   }

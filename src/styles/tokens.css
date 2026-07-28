@@ -12,6 +12,16 @@
   --sage: #3c5c48; /* secondary accent — tags */
   --ph1: #ececea; /* cover placeholder gradient stop 1 */
   --ph2: #e2e1de; /* cover placeholder gradient stop 2 */
+  --shadow-card: 0 12px 32px rgba(36, 31, 26, 0.16); /* card hover elevation */
+  --muted-strong: rgba(
+    36,
+    31,
+    26,
+    0.7
+  ); /* meta text on the fallback-card gradient (--ph1/--ph2) — WCAG AA */
+  --sage-strong: var(
+    --sage
+  ); /* light --sage already clears 4.5:1 on the fallback gradient; no change needed */
 }
 
 :root[data-theme='dark'] {
@@ -25,4 +35,9 @@
   --sage: #7ea08a;
   --ph1: #232a33;
   --ph2: #2b3540;
+  --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.5); /* card hover elevation (dark) */
+  --muted-strong: var(
+    --muted
+  ); /* dark --muted already clears 4.5:1 on the fallback gradient; no change needed */
+  --sage-strong: #8baa96; /* lightened --sage for 4.5:1 on the fallback gradient (--ph1/--ph2) — WCAG AA */
 }
