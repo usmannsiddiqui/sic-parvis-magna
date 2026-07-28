@@ -1,0 +1,180 @@
+---
+import type { EssayListItem } from '../lib/essays';
+import { Image } from 'astro:assets';
+import { formatDate } from '../lib/format';
+
+interface Props {
+  essay: EssayListItem;
+}
+const { essay } = Astro.props;
+---
+
+<a class="card" href={`/writing/${essay.slug}`}>
+  {
+    essay.coverImage ? (
+      <span class="card__cover">
+        <Image
+          class="card__img"
+          src={essay.coverImage}
+          alt=""
+          widths={[400, 800]}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+        />
+        <span class="card__scrim" aria-hidden="true" />
+        <span class="card__overlay">
+          <span class="card__title">{essay.title}</span>
+          <span class="card__meta">
+            {formatDate(essay.pubDate)} · {essay.readingTimeLabel} · {essay.category}
+          </span>
+        </span>
+      </span>
+    ) : (
+      <span class="card__fallback">
+        <svg class="card__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            d="M12 2c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-1-3 3 2 4 5 4 8a8 8 0 0 1-16 0c0-4 3-7 5-9 1 2 2 2 3 1 1-1 1-2 0-4z"
+            fill="currentColor"
+          />
+        </svg>
+        <span class="card__body">
+          <span class="card__category">{essay.category}</span>
+          <span class="card__title">{essay.title}</span>
+          <span class="card__meta">
+            {formatDate(essay.pubDate)} · {essay.readingTimeLabel}
+          </span>
+        </span>
+      </span>
+    )
+  }
+</a>
+
+<style>
+  .card {
+    display: block;
+    aspect-ratio: 7 / 6;
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 300ms ease;
+  }
+  @media (min-width: 640px) {
+    .card {
+      border-radius: 16px;
+    }
+  }
+
+  /* Shared: both paths fill the whole box */
+  .card__cover,
+  .card__fallback {
+    position: relative;
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Fallback path (visible now, no cover) */
+  .card__fallback {
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    background: linear-gradient(155deg, var(--ph1), var(--ph2));
+    transition: transform 600ms ease;
+  }
+  .card__glyph {
+    width: 28px;
+    height: 28px;
+    color: var(--fire);
+    opacity: 0.85;
+  }
+  .card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .card__fallback .card__category {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sage);
+  }
+  .card__fallback .card__title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(20px, 2.4vw, 26px);
+    line-height: 1.2;
+    color: var(--text);
+    text-wrap: balance;
+  }
+  .card__fallback .card__meta {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* Cover path (dormant until real covers land) */
+  .card__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 600ms ease;
+  }
+  .card__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.66), rgba(0, 0, 0, 0) 55%);
+  }
+  .card__overlay {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 24px 20px;
+    text-align: center;
+    align-items: center;
+  }
+  .card__cover .card__title {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 1.3;
+    color: #fff;
+  }
+  .card__cover .card__meta {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  /* Hover: image/surface zoom + shadow elevation (pointer devices only) */
+  @media (hover: hover) {
+    .card:hover {
+      box-shadow: var(--shadow-card);
+    }
+    .card:hover .card__img,
+    .card:hover .card__fallback {
+      transform: scale(1.05);
+    }
+  }
+
+  /* Focus: visible keyboard ring */
+  .card:focus-visible {
+    outline: 2px solid var(--fire);
+    outline-offset: 3px;
+  }
+
+  /* Reduced motion: fully static */
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .card__img,
+    .card__fallback {
+      transition: none;
+    }
+    .card:hover .card__img,
+    .card:hover .card__fallback {
+      transform: none;
+    }
+  }
+</style>
