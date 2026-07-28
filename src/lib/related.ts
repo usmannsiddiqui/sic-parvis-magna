@@ -2,8 +2,9 @@ import type { EssayListItem } from './essays';
 
 /** Number of tags shared between two essays (each shared tag counted once). */
 function sharedTagCount(a: EssayListItem, b: EssayListItem): number {
-  const set = new Set(a.tags);
-  return b.tags.filter((t) => set.has(t)).length;
+  const setA = new Set(a.tags);
+  const setB = new Set(b.tags);
+  return [...setB].filter((t) => setA.has(t)).length;
 }
 
 /** Relatedness score: +2 for the same category, +1 per shared tag. */

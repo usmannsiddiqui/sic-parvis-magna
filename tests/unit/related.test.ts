@@ -34,6 +34,12 @@ describe('relatedScore', () => {
     const candidate = essay({ category: 'Reflections', tags: ['habit'] });
     expect(relatedScore(current, candidate)).toBe(1);
   });
+
+  it('counts a shared tag once even when the candidate has a literal duplicate', () => {
+    const current = essay({ category: 'Discipline', tags: ['prayer'] });
+    const candidate = essay({ category: 'Reflections', tags: ['prayer', 'prayer'] });
+    expect(relatedScore(current, candidate)).toBe(1);
+  });
 });
 
 describe('relatedEssays', () => {
