@@ -31,6 +31,7 @@ test('/writing card grid — list semantics, single-link cards, visible focus', 
   // The grid is a semantic list.
   const grid = page.locator('ul.grid');
   await expect(grid).toHaveCount(1);
+  await expect(grid).toHaveRole('list');
 
   // Each list item holds exactly one focusable link (the whole card).
   const items = grid.locator(':scope > li');
