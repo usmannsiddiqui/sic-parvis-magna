@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteNav from '../../components/SiteNav.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
-import EssayList from '../../components/EssayList.astro';
+import ArticleGrid from '../../components/ArticleGrid.astro';
 import { toListItem } from '../../lib/to-list-item';
 import { publishedSorted } from '../../lib/essays';
 import { topicSlugs, resolveTopic } from '../../lib/topics';
@@ -27,7 +27,7 @@ const kind = resolved.type === 'category' ? 'Shelf' : 'Tag';
   <section class="topic">
     <p class="topic__kind">{kind}</p>
     <h1 class="topic__title">{resolved.label}</h1>
-    <EssayList essays={resolved.essays} empty={`No essays under ${resolved.label} yet.`} />
+    <ArticleGrid essays={resolved.essays} empty={`No essays under ${resolved.label} yet.`} />
     <p class="topic__back"><a href="/topics">← All topics</a></p>
   </section>
 
@@ -36,7 +36,7 @@ const kind = resolved.type === 'category' ? 'Shelf' : 'Tag';
 
 <style>
   .topic {
-    max-width: 820px;
+    max-width: 1200px;
     margin: 48px auto 0;
     padding: 0 32px;
   }
