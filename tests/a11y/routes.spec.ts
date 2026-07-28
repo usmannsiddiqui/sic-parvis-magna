@@ -1,7 +1,15 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const ROUTES = ['/', '/writing', '/topics', '/topics/discipline', '/topics/islam', '/about'];
+const ROUTES = [
+  '/',
+  '/writing',
+  '/writing/sample-the-first-rep',
+  '/topics',
+  '/topics/discipline',
+  '/topics/islam',
+  '/about',
+];
 
 for (const route of ROUTES) {
   test(`${route} — one h1, axe clean in both themes`, async ({ page }) => {

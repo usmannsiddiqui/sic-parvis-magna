@@ -97,7 +97,8 @@ const { essay } = Astro.props;
     font-size: 12px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--sage);
+    /* --sage-strong: same as --sage in light (already AA), lightened in dark (see tokens.css) */
+    color: var(--sage-strong);
   }
   .card__fallback .card__title {
     font-family: var(--font-serif);
@@ -110,7 +111,8 @@ const { essay } = Astro.props;
   .card__fallback .card__meta {
     font-family: var(--font-sans);
     font-size: 13px;
-    color: var(--muted);
+    /* --muted-strong: stronger alpha in light (was failing on --ph1/--ph2), same as --muted in dark (already AA) */
+    color: var(--muted-strong);
   }
 
   /* Cover path (dormant until real covers land) */
