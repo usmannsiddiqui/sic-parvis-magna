@@ -14,7 +14,10 @@ export default defineConfig({
 
   markdown: {
     shikiConfig: {
-      themes: { light: 'github-light', dark: 'github-dark' },
+      // github-light's default orange (#E36209) and github-dark's comment gray
+      // (#6A737D) both fail WCAG AA on their backgrounds; the high-contrast
+      // variants clear 4.5:1 while staying built-in Shiki themes.
+      themes: { light: 'github-light-high-contrast', dark: 'github-dark-high-contrast' },
       defaultColor: false, // emit raw --shiki-light / --shiki-dark vars; we switch them by [data-theme]
     },
   },
