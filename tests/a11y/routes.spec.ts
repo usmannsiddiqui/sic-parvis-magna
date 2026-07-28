@@ -45,9 +45,7 @@ test('/writing card grid — list semantics, single-link cards, visible focus', 
   const firstLink = items.first().locator('a');
   await firstLink.focus();
   await expect(firstLink).toBeFocused();
-  const outlineWidth = await firstLink.evaluate(
-    (el) => getComputedStyle(el).outlineWidth,
-  );
+  const outlineWidth = await firstLink.evaluate((el) => getComputedStyle(el).outlineWidth);
   expect(parseFloat(outlineWidth)).toBeGreaterThan(0);
 });
 
