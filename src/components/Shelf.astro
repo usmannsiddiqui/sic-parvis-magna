@@ -1,0 +1,182 @@
+---
+import type { Shelf as ShelfData } from '../lib/shelves';
+import BookSpine from './BookSpine.astro';
+import ShelfLedge from './ShelfLedge.astro';
+
+export interface Props {
+  shelf: ShelfData;
+}
+
+const { shelf } = Astro.props;
+
+/**
+ * Deterministic small-integer hash of a string (sum of char codes) — same
+ * technique as `shelves.ts`'s `hashString`, kept local so this component
+ * doesn't need to import from it.
+ */
+function hashString(input: string): number {
+  let total = 0;
+  for (let i = 0; i < input.length; i += 1) total += input.charCodeAt(i);
+  return total;
+}
+
+/** Deterministic width (44-48px) and height (184-208px) for a spine at `index` within `slug`'s shelf. */
+function spineSizeFor(slug: string, index: number): { width: number; height: number } {
+  const hash = hashString(`${slug}-${index}`);
+  const width = 44 + (hash % 5); // 44-48px
+  const height = 184 + ((hash + index * 11) % 25); // 184-208px
+  return { width, height };
+}
+
+/** Deterministic height (164-186px) for a filler book, derived from its (precomputed) width. */
+function fillerHeightFor(width: number): number {
+  return 164 + (width - 13) * 7; // 13->164, 16->185
+}
+
+const spineTones = ['a', 'b', 'c'] as const;
+
+const realSpines = shelf.spines.map((spine, index) => ({
+  ...spine,
+  tone: spineTones[index % spineTones.length],
+  ...spineSizeFor(shelf.slug, index),
+}));
+
+const comingSoonSpines = Array.from({ length: shelf.comingSoon }, (_, i) => {
+  const index = shelf.spines.length + i;
+  return spineSizeFor(shelf.slug, index);
+});
+
+const countLabel = shelf.count >= 1 ? `${shelf.count} essays` : 'Coming soon';
+---
+
+<section class="shelf">
+  <div class="shelf__header">
+    <h2 class="shelf__label">{shelf.label}</h2>
+    <span class="shelf__count">{countLabel}</span>
+    <span class="shelf__rule" aria-hidden="true"></span>
+    <a class="shelf__browse" href={`/topics/${shelf.slug}`}>Browse →</a>
+  </div>
+  <div class="shelf__row">
+    {
+      realSpines.map((spine) => (
+        <BookSpine
+          title={spine.title}
+          href={spine.href}
+          tone={spine.tone}
+          width={spine.width}
+          height={spine.height}
+        />
+      ))
+    }
+    {
+      comingSoonSpines.map((size) => (
+        <BookSpine title="Coming soon" tone="soon" width={size.width} height={size.height} />
+      ))
+    }
+    {
+      shelf.fillers.map((width) => (
+        <div
+          class="shelf__filler"
+          aria-hidden="true"
+          style={`--filler-w: ${width}px; --filler-h: ${fillerHeightFor(width)}px;`}
+        />
+      ))
+    }
+    {
+      shelf.moreCount > 0 && (
+        <span class="shelf__more" aria-hidden="true">
+          +{shelf.moreCount} more
+        </span>
+      )
+    }
+  </div>
+  <ShelfLedge />
+</section>
+
+<style>
+  .shelf__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .shelf__label {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: 0.2px;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .shelf__count {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .shelf__rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .shelf__browse {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  @media (hover: hover) {
+    .shelf__browse:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .shelf__browse:focus-visible {
+    outline: 2px solid var(--fire);
+    outline-offset: 3px;
+  }
+
+  .shelf__row {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    padding: 0 6px;
+    position: relative;
+    z-index: 2;
+    overflow-x: auto;
+  }
+
+  .shelf__filler {
+    flex: none;
+    align-self: flex-end;
+    width: var(--filler-w);
+    height: var(--filler-h);
+    border-radius: 2px 2px 0 0;
+    background: color-mix(in srgb, var(--text) 10%, var(--surface));
+    box-shadow:
+      inset 1px 0 0 color-mix(in srgb, #fff 24%, transparent),
+      -2px 0 5px -3px var(--ledge-edge);
+  }
+
+  .shelf__more {
+    align-self: flex-end;
+    margin-bottom: 8px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+</style>
