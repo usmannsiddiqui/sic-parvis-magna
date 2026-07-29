@@ -1,4 +1,4 @@
-# Phase 5 — Topics as Shelves (design spec)
+# Phase 4.5 — Topics as Shelves (design spec)
 
 **Status:** draft · **Date:** 2026-07-29
 **Source mockup:** Claude Design project `b988125c-3a39-4ae3-bce1-b95576ecff10`,

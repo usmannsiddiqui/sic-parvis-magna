@@ -1,9 +1,9 @@
-# Phase 5 — Topics as Shelves (implementation plan)
+# Phase 4.5 — Topics as Shelves (implementation plan)
 
 **Goal:** Replace the `/topics` index with the bookshelf design — category
 shelves of titled essay spines on ledges, plus a frequency-sized tag cloud.
 
-**Design spec:** `docs/superpowers/specs/2026-07-29-phase-5-topics-shelves-design.md` — authoritative.
+**Design spec:** `docs/superpowers/specs/2026-07-29-phase-4-5-topics-shelves-design.md` — authoritative.
 
 **Tech Stack:** Astro 5 (static) · Content Collections + Zod · Tailwind-free
 scoped `<style>` + CSS custom-property tokens · Vitest (unit) · Playwright +
@@ -181,7 +181,7 @@ Every gate must genuinely execute. A missing script or a silent skip is a
 
 ```bash
 git add -A
-git commit -m "polish: prettier formatting; full gate green for Phase 5"
+git commit -m "polish: prettier formatting; full gate green for Phase 4.5"
 ```
 
 ---
@@ -193,8 +193,8 @@ git commit -m "polish: prettier formatting; full gate green for Phase 5"
 3. Push and open the PR:
 
 ```bash
-git push -u origin <phase-5-implementation-branch>
-gh pr create --title "Phase 5 — topics as shelves" --body "Implements docs/superpowers/plans/2026-07-29-phase-5-topics-shelves.md. Rebuilds /topics as category bookshelves with titled essay spines, decorative fillers, and a frequency-sized tag cloud. Gate green: typecheck/test/build/a11y/lint."
+git push -u origin <phase-4-5-implementation-branch>
+gh pr create --title "Phase 4.5 — topics as shelves" --body "Implements docs/superpowers/plans/2026-07-29-phase-4-5-topics-shelves.md. Rebuilds /topics as category bookshelves with titled essay spines, decorative fillers, and a frequency-sized tag cloud. Gate green: typecheck/test/build/a11y/lint."
 ```
 
 4. Watch CI with `gh pr checks --watch` until green. **Verify via `gh`, not a
@@ -211,6 +211,6 @@ updated `main` — not this docs branch, not `main`.
   "The Margins · Essays" is design-tool placeholder. Owner may override.
 - **Sparse shelves: settled by the owner on 2026-07-29** — render only shelves
   that have essays; new shelves appear as categories get used (spec §5). No
-  empty ledges, and Phase 5 is not held for more content.
+  empty ledges, and Phase 4.5 is not held for more content.
 - The `.thumbnail`, `WritingPanel.dc.html`, and `Directions B and C.dc.html`
   files in the Design project are unread and out of scope.
