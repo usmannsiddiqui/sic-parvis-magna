@@ -31,16 +31,20 @@ New `src/lib/shelves.ts`. Pure functions, no Astro imports, unit-testable.
 
 Write `tests/unit/shelves.test.ts` **first**:
 
-- `buildShelves(published)` returns one entry per `CATEGORIES` member, in
-  `CATEGORIES` order, even when a category has zero essays.
-- Each shelf: `{ label, slug, count, spines, fillers, moreCount, isEmpty }`.
+- `buildShelves(published)` returns one entry per `CATEGORIES` member **that has
+  at least one published essay**, in `CATEGORIES` order. Categories with zero
+  published essays are omitted from the result entirely (spec §5).
+- Each shelf: `{ label, slug, count, spines, fillers, moreCount }`.
 - `spines` = up to 4 most-recent published essays of that category, newest first.
 - `moreCount` = `count - spines.length`, floored at 0.
-- `isEmpty` is true only when `count === 0`.
-- A category with 0 essays yields `spines: []`, `fillers: []`, `moreCount: 0`.
-- A category with 1–2 essays yields those spines plus enough fillers to reach
-  the minimum row width; with ≥3 it interleaves per the spec.
-- Drafts never appear.
+- Given essays in only one category, the result has **length 1**, not
+  `CATEGORIES.length`.
+- Given no published essays at all, the result is `[]` — the page renders its
+  single empty state, not a list of empty ledges.
+- A shelf with 1–2 essays yields those spines plus enough fillers to reach the
+  minimum row width; with ≥3 it interleaves per the spec.
+- `count` is always the true number of published essays in that category.
+- Drafts never appear, and never contribute to `count`.
 - Filler geometry is **deterministic given the shelf slug** — no
   `Math.random()`, so the build is reproducible and snapshot-stable.
 
@@ -101,8 +105,8 @@ row, and the ledge.
 
 - Filler books: `aria-hidden="true"`, no link, no hover.
 - "+N more": `aria-hidden="true"`, rendered only when `moreCount > 0`.
-- Empty shelf: no fillers, no "+N more" — the ledge plus a single muted line
-  ("Nothing shelved yet.") in place of the books.
+- `Shelf` has **no empty state** — `buildShelves` never emits an empty shelf
+  (spec §5). The page-level empty state lives in Task 5.
 - Books overflow horizontally on narrow viewports without breaking the ledge —
   the row scrolls, the page body does not.
 
@@ -116,13 +120,24 @@ git commit -m "feat: Shelf component with spines, fillers, and empty state"
 ## Task 5: Rewrite `/topics`
 
 Rewire `src/pages/topics/index.astro` to the new composition: header (eyebrow,
-h1, lede) → three `<Shelf>` → tag cloud → computed footer line.
+h1, lede) → one `<Shelf>` per entry returned by `buildShelves` → tag cloud →
+computed footer line.
 
 Delete the old `.shelves` / `.shelf` / `.tags` / `.tag` styles and markup
 entirely. Keep `max-width` consistent with the rest of the site.
 
 Everything computed — counts, "+N more", tag sizes, footer. Nothing hardcoded.
-Eyebrow copy: "Sic Parvis Magna · Essays".
+
+- Eyebrow copy: "Sic Parvis Magna · Essays".
+- Lede: "Everything I've been working through, arranged on shelves." — no shelf
+  count interpolated (spec §4).
+- Footer shelf count = number of **rendered** shelves, not `CATEGORIES.length`.
+- When `buildShelves` returns `[]`, render the page-level empty state
+  ("Nothing shelved yet.") in place of the shelf list. The header and tag cloud
+  sections still render; the tag cloud will simply be empty.
+
+With today's content this page renders **one** shelf. That is correct, not a
+bug — do not pad it to three.
 
 ```bash
 git add -A
@@ -194,9 +209,8 @@ updated `main` — not this docs branch, not `main`.
 
 - **Eyebrow copy** is an assumption ("Sic Parvis Magna · Essays"). The mockup's
   "The Margins · Essays" is design-tool placeholder. Owner may override.
-- **Sparse-shelf rules** (spec §5) are the planner's recommendation, not an
-  owner decision. With one published essay, two of three shelves render empty on
-  launch. If the owner would rather not ship visibly empty shelves, the
-  alternative is to hold Phase 5 until there are ~3 essays.
+- **Sparse shelves: settled by the owner on 2026-07-29** — render only shelves
+  that have essays; new shelves appear as categories get used (spec §5). No
+  empty ledges, and Phase 5 is not held for more content.
 - The `.thumbnail`, `WritingPanel.dc.html`, and `Directions B and C.dc.html`
   files in the Design project are unread and out of scope.

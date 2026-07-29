@@ -149,42 +149,46 @@ The mockup's eyebrow reads **"The Margins · Essays"** — placeholder from the
 design tool, not this site. Ship **"Sic Parvis Magna · Essays"** unless the owner
 supplies different wording.
 
-Lede — "Everything I've been working through, arranged on three shelves." Keep,
-but "three" must not be hardcoded if `CATEGORIES` ever changes length.
+Lede — the mockup's "…arranged on three shelves" hardcodes a count that is now
+wrong (§5). Ship "Everything I've been working through, arranged on shelves."
+Do not interpolate a shelf count into the lede; the footer already carries it.
 
 Footer — `{N} essays across {M} shelves · last shelved {Month Year}`, all
 computed. Omit the "last shelved" clause when there are zero published essays.
 
 ---
 
-## 5. The sparse-shelf problem
+## 5. Shelves grow with the content — owner decision, 2026-07-29
 
-**This is the one thing the mockup cannot answer, and it decides how the page
-looks on launch day.**
+The mockup shows 14 / 9 / 23 essays across three stocked shelves. The site
+currently has **one** real essay, so a literal three-shelf render would ship two
+empty shelves on launch day.
 
-The mockup shows 14 / 9 / 23 essays with decorative fillers and "+N more". The
-site currently has **one** real essay. A shelf rendering a single 46px spine on
-a 13px ledge, twice over with two empty shelves beside it, looks broken rather
-than sparse-on-purpose.
+**Decision: the page renders only shelves that have essays.** A category with
+zero published essays is omitted from the page entirely — no ledge, no empty
+state, no placeholder. As essays land in new categories, those shelves appear on
+their own. Today that means one shelf; the page fills in as the writing does.
 
 Rules:
 
+- **Render a shelf only when its category has ≥ 1 published essay.** Iterate
+  `CATEGORIES` in order and drop the empties. Never render an empty ledge.
 - **Titled spines are real essays only.** Never invent a titled spine. The title
   on a spine is a content claim.
-- **Filler books are texture, not content.** They carry no title, no link, and
-  `aria-hidden`. Rendering them is a visual decision, not a truth claim — but
-  only while the visible count stays honest.
+- **Filler books are texture, not content.** No title, no link, `aria-hidden`.
+  They pad a thin shelf so a single essay does not look stranded — legitimate
+  because the shelf's count label always states the true number.
 - **A shelf with ≥ 3 published essays** renders per the mockup: up to 4 titled
   spines (most recent first), fillers interleaved, "+N more" when
   `count > shown`.
 - **A shelf with 1–2 published essays** renders its real spines, then fillers to
-  a minimum row width, and the count label still reads the true number.
-- **A shelf with 0 published essays** renders an empty ledge and a single line in
-  place of the books: sans 11px `--muted`, e.g. *"Nothing shelved yet."* Do not
-  render fillers on an empty shelf — an empty shelf that looks stocked is a lie.
+  a minimum row width. The count label still reads the true number.
+- **Zero published essays site-wide** (no shelves at all) renders a single page
+  level empty state in place of the shelf list — sans 11px `--muted`, e.g.
+  *"Nothing shelved yet."* This is the only empty state on the page.
 
-**Recommendation:** ship the ≥3 / 1–2 / 0 rules above. It keeps the metaphor
-intact while the site is thin and needs no revisiting once it fills up.
+Consequences for §4 copy: the lede must not say "three shelves" and the footer's
+shelf count is the number of **rendered** shelves, not `CATEGORIES.length`.
 
 ---
 
