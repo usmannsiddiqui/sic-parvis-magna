@@ -46,7 +46,13 @@ const comingSoonSpines = Array.from({ length: shelf.comingSoon }, (_, i) => {
   return spineSizeFor(shelf.slug, index);
 });
 
-const countLabel = shelf.count >= 1 ? `${shelf.count} essays` : 'Coming soon';
+/** Pluralizes "essay" for the shelf's count: "1 essay", "2 essays", etc. */
+function pluralize(count: number, singular: string, plural: string): string {
+  return count === 1 ? singular : plural;
+}
+
+const countLabel =
+  shelf.count >= 1 ? `${shelf.count} ${pluralize(shelf.count, 'essay', 'essays')}` : 'Coming soon';
 ---
 
 <section class="shelf">
@@ -97,6 +103,8 @@ const countLabel = shelf.count >= 1 ? `${shelf.count} essays` : 'Coming soon';
   .shelf__header {
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
+    row-gap: 6px;
     gap: 12px;
     margin-bottom: 18px;
   }
@@ -123,6 +131,7 @@ const countLabel = shelf.count >= 1 ? `${shelf.count} essays` : 'Coming soon';
 
   .shelf__rule {
     flex: 1;
+    min-width: 20px;
     height: 1px;
     background: var(--border);
   }

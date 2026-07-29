@@ -85,18 +85,33 @@ function toneForRank(rank: number): TagTone {
 }
 
 /**
+ * Display size (px) for a tag's `count`, ramped 12 (least frequent) -> 33
+ * (most frequent) linearly between `minCount` and `maxCount`. Ties in count
+ * collapse to the same size; when every tag has the same count (min ===
+ * max), everything collapses to 33 (same convention as the single-tag case).
+ */
+function sizeForCount(count: number, minCount: number, maxCount: number): number {
+  if (minCount === maxCount) return 33;
+  return Math.round(12 + ((count - minCount) / (maxCount - minCount)) * (33 - 12));
+}
+
+/**
  * Tags from `collectTags`, re-sorted by frequency (count desc, then label asc
- * to break ties), with a display `size` (33px -> 12px ramp by rank) and a
- * periodic accent `tone`.
+ * to break ties), with a display `size` (33px -> 12px ramp by actual
+ * frequency/count — tags with equal counts get equal sizes) and a periodic
+ * accent `tone` (still rank-based; tone-cycling is decorative variety, not
+ * a frequency requirement).
  */
 export function tagsByFrequency(published: EssayListItem[]): TagFrequencyInfo[] {
   const tags = collectTags(published)
     .slice()
     .sort((a, b) => (b.count !== a.count ? b.count - a.count : a.label.localeCompare(b.label)));
-  const n = tags.length;
+  const counts = tags.map((t) => t.count);
+  const minCount = Math.min(...counts);
+  const maxCount = Math.max(...counts);
   return tags.map((tag, i) => ({
     ...tag,
-    size: n <= 1 ? 33 : Math.round(33 - (i / (n - 1)) * (33 - 12)),
+    size: sizeForCount(tag.count, minCount, maxCount),
     tone: toneForRank(i + 1),
   }));
 }

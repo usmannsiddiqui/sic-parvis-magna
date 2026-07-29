@@ -157,7 +157,7 @@ describe('buildShelves', () => {
 });
 
 describe('tagsByFrequency', () => {
-  it('sorts by count descending, then label ascending on ties, with a 33->12 size ramp', () => {
+  it('sorts by count descending, then label ascending on ties, with a frequency-based 33->12 size ramp (ties in count share the same size)', () => {
     // tagA:5 tagB:4 tagC:4 tagD:3 tagE:2 tagF:1 tagG:1
     const published = publishedSorted([
       essay({ slug: 'e1', tags: ['tagA', 'tagB', 'tagC', 'tagD', 'tagE'] }),
@@ -178,7 +178,7 @@ describe('tagsByFrequency', () => {
       'tagG',
     ]);
     expect(tags.map((t) => t.count)).toEqual([5, 4, 4, 3, 2, 1, 1]);
-    expect(tags.map((t) => t.size)).toEqual([33, 30, 26, 23, 19, 16, 12]);
+    expect(tags.map((t) => t.size)).toEqual([33, 28, 28, 23, 17, 12, 12]);
     // rank 5 (tagE) -> fire, rank 7 (tagG) -> sage, everything else -> text.
     expect(tags.map((t) => t.tone)).toEqual([
       'text',
@@ -207,7 +207,7 @@ describe('tagsByFrequency', () => {
     const tags = tagsByFrequency(published);
     expect(tags.map((t) => t.label)).toEqual(['tagA', 'tagZ']);
     expect(tags.map((t) => t.count)).toEqual([2, 2]);
-    expect(tags.map((t) => t.size)).toEqual([33, 12]);
+    expect(tags.map((t) => t.size)).toEqual([33, 33]);
   });
 
   it('cycles tone deterministically by rank: fire at 5/10, sage at 7, muted at 11', () => {

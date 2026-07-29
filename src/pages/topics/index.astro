@@ -20,11 +20,16 @@ const MONTH_YEAR_FMT = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 });
 
+/** Pluralizes a noun for `count`: 1 -> singular, otherwise -> plural. */
+function pluralize(count: number, singular: string, plural: string): string {
+  return count === 1 ? singular : plural;
+}
+
 const essayCount = published.length;
 const shelfCount = CATEGORIES.length;
 const lastShelvedClause =
   essayCount > 0 ? ` · last shelved ${MONTH_YEAR_FMT.format(published[0].pubDate)}` : '';
-const footerLine = `${essayCount} essays across ${shelfCount} shelves${lastShelvedClause}`;
+const footerLine = `${essayCount} ${pluralize(essayCount, 'essay', 'essays')} across ${shelfCount} ${pluralize(shelfCount, 'shelf', 'shelves')}${lastShelvedClause}`;
 ---
 
 <BaseLayout title="Topics — Sic Parvis Magna">
@@ -140,6 +145,11 @@ const footerLine = `${essayCount} essays across ${shelfCount} shelves${lastShelv
     .tag-cloud__item:hover {
       text-decoration: underline;
     }
+  }
+
+  .tag-cloud__item:focus-visible {
+    outline: 2px solid var(--fire);
+    outline-offset: 3px;
   }
 
   .tag-cloud__item--text {
