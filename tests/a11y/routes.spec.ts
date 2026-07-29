@@ -110,6 +110,10 @@ test('/topics coming-soon spines are not links and not focusable', async ({ page
     await expect(el).not.toHaveJSProperty('tagName', 'A');
     await expect(el).not.toHaveAttribute('href', /.*/);
     await expect(el).not.toHaveAttribute('tabindex', /.*/);
+    // The "Coming soon" text must stay in the accessibility tree — the
+    // spine (and its title span) must NOT be aria-hidden.
+    await expect(el).not.toHaveAttribute('aria-hidden', 'true');
+    await expect(el.locator('.spine__title')).not.toHaveAttribute('aria-hidden', 'true');
   }
 });
 
