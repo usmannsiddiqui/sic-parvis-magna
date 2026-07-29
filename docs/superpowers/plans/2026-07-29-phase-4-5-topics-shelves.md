@@ -31,20 +31,25 @@ New `src/lib/shelves.ts`. Pure functions, no Astro imports, unit-testable.
 
 Write `tests/unit/shelves.test.ts` **first**:
 
-- `buildShelves(published)` returns one entry per `CATEGORIES` member **that has
-  at least one published essay**, in `CATEGORIES` order. Categories with zero
-  published essays are omitted from the result entirely (spec §5).
-- Each shelf: `{ label, slug, count, spines, fillers, moreCount }`.
+- `buildShelves(published)` returns **one entry per `CATEGORIES` member, always**,
+  in `CATEGORIES` order. No category is ever omitted (spec §5). Result length is
+  always `CATEGORIES.length`.
+- Each shelf: `{ label, slug, count, spines, comingSoon, fillers, moreCount }`.
 - `spines` = up to 4 most-recent published essays of that category, newest first.
-- `moreCount` = `count - spines.length`, floored at 0.
-- Given essays in only one category, the result has **length 1**, not
-  `CATEGORIES.length`.
-- Given no published essays at all, the result is `[]` — the page renders its
-  single empty state, not a list of empty ledges.
-- A shelf with 1–2 essays yields those spines plus enough fillers to reach the
-  minimum row width; with ≥3 it interleaves per the spec.
+  Every entry has a real `title` and `href`.
+- `comingSoon` = how many placeholder spines to render, such that
+  `spines.length + comingSoon >= 3`. Zero when the shelf already has ≥3 real
+  spines.
+- `moreCount` = `count - spines.length`, floored at 0. **Coming-soon spines never
+  contribute to `moreCount`.**
+- Given essays in only one category, the other categories still return shelves —
+  with `count: 0`, `spines: []`, and `comingSoon: 3`.
+- Given no published essays at all, all three shelves return `count: 0` and
+  `comingSoon: 3`. There is no empty-page case.
 - `count` is always the true number of published essays in that category.
-- Drafts never appear, and never contribute to `count`.
+- Drafts never appear in `spines`, and never contribute to `count`.
+- **A coming-soon entry never carries a title or href.** Assert this — inventing
+  a title on a placeholder is the one thing this design must not do.
 - Filler geometry is **deterministic given the shelf slug** — no
   `Math.random()`, so the build is reproducible and snapshot-stable.
 
@@ -80,10 +85,15 @@ git commit -m "feat: add shelf spine/ledge tokens for the topics index"
 
 `src/components/BookSpine.astro`:
 
-- Props: `title`, `href`, `tone` (`a` | `b` | `c`), `width`, `height`.
-- Renders an `<a>` wrapping the full spine — the whole book is the hit target.
-- Vertical title, the two 56% rules, rest/hover shadows, `.18s` transition.
-- Visible focus ring (`:focus-visible`), not just the hover shadow.
+- Props: `title`, `href`, `tone` (`a` | `b` | `c` | `soon`), `width`, `height`.
+- **Real spine** (`tone` a/b/c, `href` present): renders an `<a>` wrapping the
+  full spine — the whole book is the hit target. Vertical title, the two 56%
+  rules, rest/hover shadows, `.18s` transition, visible `:focus-visible` ring.
+- **Coming-soon spine** (`tone: 'soon'`, no `href`): renders a non-interactive
+  element — no `<a>`, no hover elevation, not focusable. Filler-fill background,
+  text `--muted-strong` (**not** `--muted` — it fails AA at 4.15:1 in light
+  mode, spec §2), and **no** 56% rules.
+- Not `aria-hidden` — "Coming soon" must reach the accessibility tree.
 - All geometry via CSS custom properties set inline from props, so the scoped
   `<style>` holds the real rules.
 
@@ -103,16 +113,20 @@ git commit -m "feat: BookSpine and ShelfLedge components"
 Composes one category row: header (h2 + count + hairline + "Browse →"), the book
 row, and the ledge.
 
-- Filler books: `aria-hidden="true"`, no link, no hover.
+- Header count label: `{n} essays` when `count >= 1`; **"Coming soon"** when
+  `count === 0` (spec §5). Never "0 essays".
+- Real spines first, then `comingSoon` placeholder spines.
+- Filler books: `aria-hidden="true"`, no link, no hover. Optional texture only —
+  never used to imply an unwritten essay.
 - "+N more": `aria-hidden="true"`, rendered only when `moreCount > 0`.
-- `Shelf` has **no empty state** — `buildShelves` never emits an empty shelf
-  (spec §5). The page-level empty state lives in Task 5.
+- `Shelf` has **no empty state** — every shelf always renders books, real or
+  coming-soon (spec §5). There is no page-level empty state either.
 - Books overflow horizontally on narrow viewports without breaking the ledge —
   the row scrolls, the page body does not.
 
 ```bash
 git add -A
-git commit -m "feat: Shelf component with spines, fillers, and empty state"
+git commit -m "feat: Shelf component with real and coming-soon spines"
 ```
 
 ---
@@ -131,13 +145,14 @@ Everything computed — counts, "+N more", tag sizes, footer. Nothing hardcoded.
 - Eyebrow copy: "Sic Parvis Magna · Essays".
 - Lede: "Everything I've been working through, arranged on shelves." — no shelf
   count interpolated (spec §4).
-- Footer shelf count = number of **rendered** shelves, not `CATEGORIES.length`.
-- When `buildShelves` returns `[]`, render the page-level empty state
-  ("Nothing shelved yet.") in place of the shelf list. The header and tag cloud
-  sections still render; the tag cloud will simply be empty.
+- Footer: essay count is the true published total; shelf count is
+  `CATEGORIES.length`. Omit the "last shelved" clause when the total is 0.
+- The tag cloud renders only real tags from real essays. If there are none, omit
+  the whole "By tag" section rather than showing an empty row.
 
-With today's content this page renders **one** shelf. That is correct, not a
-bug — do not pad it to three.
+With today's content this page renders **three** shelves: one holding a real
+spine plus coming-soon placeholders, two holding coming-soon placeholders only.
+That is correct.
 
 ```bash
 git add -A
@@ -150,8 +165,12 @@ git commit -m "feat: rebuild the topics index as bookshelves"
 
 Extend `tests/a11y/routes.spec.ts` with a `/topics` contract:
 
-- Each titled spine is exactly one focusable link, and its accessible name is
-  the essay title.
+- Each **real** titled spine is exactly one focusable link, and its accessible
+  name is the essay title.
+- **Coming-soon spines are not links and not focusable**, but their text IS in
+  the accessibility tree (not `aria-hidden`).
+- No coming-soon spine renders an essay title, and no real essay title appears
+  on a non-link spine.
 - Filler books, ledges, and "+N more" are hidden from the accessibility tree.
 - Exactly one `h1`; shelf headings are `h2`.
 - Tag cloud links have non-empty accessible names.
@@ -209,8 +228,11 @@ updated `main` — not this docs branch, not `main`.
 
 - **Eyebrow copy** is an assumption ("Sic Parvis Magna · Essays"). The mockup's
   "The Margins · Essays" is design-tool placeholder. Owner may override.
-- **Sparse shelves: settled by the owner on 2026-07-29** — render only shelves
-  that have essays; new shelves appear as categories get used (spec §5). No
-  empty ledges, and Phase 4.5 is not held for more content.
+- **Sparse shelves: settled by the owner on 2026-07-29** — all three shelves
+  always render; slots without a real essay show a "Coming soon" spine
+  (spec §5). No hidden shelves, no empty ledges, and Phase 4.5 is not held for
+  more content.
+- **Placeholder copy** defaults to "Coming soon" on every shelf. Owner may swap
+  in per-shelf variants later (spec §5) — vary per shelf, never per spine.
 - The `.thumbnail`, `WritingPanel.dc.html`, and `Directions B and C.dc.html`
   files in the Design project are unread and out of scope.

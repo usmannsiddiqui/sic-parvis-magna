@@ -103,6 +103,8 @@ later without touching either.
 | `--spine-ink` on `--spine-b` | 7.46 | 6.29 |
 | `--spine-ink` on `--spine-c` | 16.33 | 14.04 |
 | `--muted` on `--bg` (12px tags, footer) | 4.64 | 5.71 |
+| `--muted` on coming-soon spine fill | **4.15 — FAILS** | 4.61 |
+| `--muted-strong` on coming-soon spine fill | 5.24 | 4.61 |
 | `--fire` on `--bg` | 5.61 | 7.52 |
 | `--sage` on `--bg` | 7.46 | 6.29 |
 
@@ -158,37 +160,60 @@ computed. Omit the "last shelved" clause when there are zero published essays.
 
 ---
 
-## 5. Shelves grow with the content — owner decision, 2026-07-29
+## 5. Coming-soon spines — owner decision, 2026-07-29
 
 The mockup shows 14 / 9 / 23 essays across three stocked shelves. The site
-currently has **one** real essay, so a literal three-shelf render would ship two
-empty shelves on launch day.
+currently has **one** real essay.
 
-**Decision: the page renders only shelves that have essays.** A category with
-zero published essays is omitted from the page entirely — no ledge, no empty
-state, no placeholder. As essays land in new categories, those shelves appear on
-their own. Today that means one shelf; the page fills in as the writing does.
+**Decision: always render all three shelves. Slots without a real essay get a
+spine labelled "Coming soon".** No shelf is hidden, no ledge is left bare.
+
+This is honest because the placeholder states plainly that nothing is there yet.
+The rule that still holds absolutely: **a spine carrying an essay title must be
+a real published essay.** Never invent a title. "Coming soon" is not a title —
+it is the absence of one, said out loud.
 
 Rules:
 
-- **Render a shelf only when its category has ≥ 1 published essay.** Iterate
-  `CATEGORIES` in order and drop the empties. Never render an empty ledge.
-- **Titled spines are real essays only.** Never invent a titled spine. The title
-  on a spine is a content claim.
-- **Filler books are texture, not content.** No title, no link, `aria-hidden`.
-  They pad a thin shelf so a single essay does not look stranded — legitimate
-  because the shelf's count label always states the true number.
-- **A shelf with ≥ 3 published essays** renders per the mockup: up to 4 titled
-  spines (most recent first), fillers interleaved, "+N more" when
-  `count > shown`.
-- **A shelf with 1–2 published essays** renders its real spines, then fillers to
-  a minimum row width. The count label still reads the true number.
-- **Zero published essays site-wide** (no shelves at all) renders a single page
-  level empty state in place of the shelf list — sans 11px `--muted`, e.g.
-  *"Nothing shelved yet."* This is the only empty state on the page.
+- **Every `CATEGORIES` member renders a shelf, always**, in `CATEGORIES` order.
+  There is no hidden-shelf case and no page-level empty state.
+- **Real spines first** — up to 4 titled spines, newest first, each an `<a>` to
+  its essay.
+- **Pad with coming-soon spines** until the shelf holds at least 3 books. A
+  coming-soon spine is **not a link** and has no hover elevation.
+- **"+N more"** appears only when real `count` exceeds the real spines shown.
+  Coming-soon spines never contribute to it.
+- **Thin decorative fillers** (`aria-hidden`, untitled, unlinked) may still
+  interleave for texture, but they are optional once coming-soon spines carry
+  the shelf. Never use an untitled filler to imply an unwritten essay.
+- **The count label always states the true published count.** When a category
+  has zero published essays the label reads **"Coming soon"** rather than
+  "0 essays".
 
-Consequences for §4 copy: the lede must not say "three shelves" and the footer's
-shelf count is the number of **rendered** shelves, not `CATEGORIES.length`.
+### Coming-soon spine treatment
+
+- Background: `color-mix(in srgb, var(--text) 10%, var(--surface))` — the filler
+  fill, so it reads as an unlabelled book rather than a coloured one. Never
+  `--spine-a/b/c`; those are reserved for real essays.
+- Text: vertical, serif 600 / 14.5px like a real spine, colour **`--muted-strong`**.
+- **Not `--muted`.** `--muted` on this background is **4.15:1** in light mode and
+  fails WCAG AA. `--muted-strong` measures **5.24:1** light / **4.61:1** dark and
+  passes. This is exactly the case `--muted-strong` was added for in Phase 4.
+- Omit the two 56% rules that real spines carry — the placeholder should read as
+  a blank book, not a bound one.
+- No `aria-hidden`: "Coming soon" is meaningful information, not decoration. It
+  must reach the accessibility tree. It simply is not focusable or clickable.
+
+### Copy
+
+Default to **"Coming soon"** on every placeholder spine. If the owner wants
+variety later, vary it *per shelf*, not per spine — three different jokes on one
+ledge reads as noise. Candidates the owner may swap in: "Being written",
+"Not yet", "In the margins", "Soon, God willing".
+
+Consequences for §4 copy: the lede must not say "three shelves"; the footer's
+shelf count is `CATEGORIES.length` and its essay count is the true published
+total.
 
 ---
 
