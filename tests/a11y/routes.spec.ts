@@ -94,7 +94,9 @@ test('/topics coming-soon spines are not links and not focusable', async ({ page
 
   // Reflections has no published essays today, so its shelf is all
   // coming-soon placeholders — a guaranteed non-empty sample.
-  const reflectionsShelf = page.locator('.shelf', { has: page.getByRole('heading', { name: 'Reflections' }) });
+  const reflectionsShelf = page.locator('.shelf', {
+    has: page.getByRole('heading', { name: 'Reflections' }),
+  });
   const soonSpines = reflectionsShelf.locator('.spine--soon');
   await expect(soonSpines.first()).toBeVisible();
 
@@ -121,16 +123,18 @@ test('/topics has no title bleed between real and coming-soon spines', async ({ 
   await page.goto('/topics');
 
   // Coming-soon spines never carry a real essay title.
-  await expect(page.locator('.spine--soon .spine__title', { hasText: 'The First Rep' })).toHaveCount(0);
   await expect(
-    page.locator('.spine--soon .spine__title', { hasText: 'What the Fast Teaches' })
+    page.locator('.spine--soon .spine__title', { hasText: 'The First Rep' }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('.spine--soon .spine__title', { hasText: 'What the Fast Teaches' }),
   ).toHaveCount(0);
 
   // Real spines never render the "Coming soon" placeholder text.
   await expect(
     page.locator('.spine--a .spine__title, .spine--b .spine__title, .spine--c .spine__title', {
       hasText: 'Coming soon',
-    })
+    }),
   ).toHaveCount(0);
 });
 
