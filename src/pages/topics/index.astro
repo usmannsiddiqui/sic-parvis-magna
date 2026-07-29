@@ -3,50 +3,62 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteNav from '../../components/SiteNav.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
+import Shelf from '../../components/Shelf.astro';
 import { CATEGORIES } from '../../content/schema';
 import { toListItem } from '../../lib/to-list-item';
 import { publishedSorted } from '../../lib/essays';
-import { normalizeSlug, collectTags } from '../../lib/topics';
+import { buildShelves, tagsByFrequency } from '../../lib/shelves';
 
 const published = publishedSorted((await getCollection('writing')).map(toListItem));
-const tags = collectTags(published);
+const shelves = buildShelves(published);
+const tags = tagsByFrequency(published);
+
+/** Month + year only, e.g. "January 2026". UTC-based, same pattern as `formatDate`. */
+const MONTH_YEAR_FMT = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  timeZone: 'UTC',
+});
+
+const essayCount = published.length;
+const shelfCount = CATEGORIES.length;
+const lastShelvedClause =
+  essayCount > 0 ? ` · last shelved ${MONTH_YEAR_FMT.format(published[0].pubDate)}` : '';
+const footerLine = `${essayCount} essays across ${shelfCount} shelves${lastShelvedClause}`;
 ---
 
 <BaseLayout title="Topics — Sic Parvis Magna">
   <SiteNav slot="header" />
 
   <section class="topics">
+    <p class="topics__eyebrow">Sic Parvis Magna · Essays</p>
     <h1 class="topics__title">Topics</h1>
+    <p class="topics__lede">Everything I've been working through, arranged on shelves.</p>
 
-    <h2 class="topics__heading">Shelves</h2>
-    <ul class="shelves" role="list">
-      {
-        CATEGORIES.map((category) => (
-          <li>
-            <a class="shelf" href={`/topics/${normalizeSlug(category)}`}>
-              {category}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    <div class="topics__shelves">
+      {shelves.map((shelf) => <Shelf shelf={shelf} />)}
+    </div>
 
     {
       tags.length > 0 && (
-        <>
-          <h2 class="topics__heading">Tags</h2>
-          <ul class="tags" role="list">
+        <section class="topics__tags">
+          <p class="topics__tags-label">By tag</p>
+          <div class="tag-cloud">
             {tags.map((tag) => (
-              <li>
-                <a class="tag" href={`/topics/${tag.slug}`}>
-                  {tag.label} <span class="tag__count">{tag.count}</span>
-                </a>
-              </li>
+              <a
+                class={`tag-cloud__item tag-cloud__item--${tag.tone}`}
+                href={`/topics/${tag.slug}`}
+                style={`font-size: ${tag.size}px`}
+              >
+                {tag.label}
+              </a>
             ))}
-          </ul>
-        </>
+          </div>
+        </section>
       )
     }
+
+    <p class="topics__footer">{footerLine}</p>
   </section>
 
   <SiteFooter slot="footer" />
@@ -58,50 +70,99 @@ const tags = collectTags(published);
     margin: 48px auto 0;
     padding: 0 32px;
   }
+
+  .topics__eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--fire);
+    margin: 0 0 14px;
+  }
+
   .topics__title {
     font-family: var(--font-serif);
     font-weight: 600;
-    font-size: clamp(30px, 4vw, 44px);
+    font-size: 46px;
+    line-height: 0.95;
+    letter-spacing: -0.6px;
     color: var(--text);
-    margin: 0 0 24px;
+    margin: 0;
   }
-  .topics__heading {
+
+  .topics__lede {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 33ch;
+    margin: 16px 0 0;
+  }
+
+  .topics__shelves {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    margin: 48px 0 0;
+  }
+
+  .topics__tags {
+    margin-top: 48px;
+    border-top: 1px solid var(--border);
+    padding-top: 30px;
+  }
+
+  .topics__tags-label {
     font-family: var(--font-sans);
-    font-size: 13px;
+    font-size: 11px;
+    font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--muted);
-    margin: 32px 0 12px;
+    margin: 0 0 16px;
   }
-  .shelves,
-  .tags {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+
+  .tag-cloud {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-  }
-  .shelf {
+    align-items: baseline;
+    gap: 8px 18px;
     font-family: var(--font-serif);
-    font-size: 20px;
+    line-height: 1;
+  }
+
+  .tag-cloud__item {
+    text-decoration: none;
+  }
+
+  @media (hover: hover) {
+    .tag-cloud__item:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .tag-cloud__item--text {
     color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    padding: 8px 16px;
   }
-  .shelf:hover {
+  .tag-cloud__item--fire {
     color: var(--fire);
-    border-color: var(--fire);
   }
-  .tag {
-    font-family: var(--font-sans);
-    font-size: 14px;
+  .tag-cloud__item--sage {
     color: var(--sage);
   }
-  .tag__count {
+  .tag-cloud__item--muted {
     color: var(--muted);
   }
+
+  .topics__footer {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    color: var(--muted);
+    margin-top: 26px;
+  }
+
   @media (max-width: 640px) {
     .topics {
       padding: 0 20px;
