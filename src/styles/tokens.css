@@ -22,6 +22,12 @@
   --sage-strong: var(
     --sage
   ); /* light --sage already clears 4.5:1 on the fallback gradient; no change needed */
+  --spine-a: #96591f; /* shelf spine accent A — matches --fire */
+  --spine-b: #3c5c48; /* shelf spine accent B — matches --sage */
+  --spine-c: #241f1a; /* shelf spine accent C — matches --text */
+  --spine-ink: #ffffff; /* shelf spine text color */
+  --ledge: #e7e1d7; /* shelf ledge base color */
+  --ledge-edge: rgba(0, 0, 0, 0.16); /* shelf ledge edge shadow */
 }
 
 :root[data-theme='dark'] {
@@ -40,4 +46,10 @@
     --muted
   ); /* dark --muted already clears 4.5:1 on the fallback gradient; no change needed */
   --sage-strong: #8baa96; /* lightened --sage for 4.5:1 on the fallback gradient (--ph1/--ph2) — WCAG AA */
+  --spine-a: #d99a54; /* shelf spine accent A — dark variant */
+  --spine-b: #7ea08a; /* shelf spine accent B — dark variant */
+  --spine-c: #e7e2d6; /* shelf spine accent C — dark variant */
+  --spine-ink: #12161c; /* shelf spine text color — dark variant */
+  --ledge: #232b35; /* shelf ledge base color — dark variant */
+  --ledge-edge: rgba(0, 0, 0, 0.5); /* shelf ledge edge shadow — dark variant */
 }

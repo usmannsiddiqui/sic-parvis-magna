@@ -1,0 +1,114 @@
+---
+export interface Props {
+  title: string;
+  href?: string;
+  tone: 'a' | 'b' | 'c' | 'soon';
+  width: number;
+  height: number;
+}
+const { title, href, tone, width, height } = Astro.props;
+const style = `--spine-w: ${width}px; --spine-h: ${height}px;`;
+const isSoon = tone === 'soon';
+---
+
+{
+  isSoon ? (
+    <div class="spine spine--soon" style={style}>
+      <span class="spine__title">{title}</span>
+    </div>
+  ) : (
+    <a class={`spine spine--${tone}`} style={style} href={href}>
+      <span class="spine__rule" />
+      <span class="spine__title">{title}</span>
+      <span class="spine__rule" />
+    </a>
+  )
+}
+
+<style>
+  .spine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: none;
+    padding: 12px 0;
+    width: var(--spine-w);
+    height: var(--spine-h);
+    border-radius: 2px 2px 0 0;
+    text-decoration: none;
+    box-sizing: border-box;
+  }
+
+  /* Real spine tones */
+  .spine--a {
+    background: var(--spine-a);
+    color: var(--spine-ink);
+  }
+  .spine--b {
+    background: var(--spine-b);
+    color: var(--spine-ink);
+  }
+  .spine--c {
+    background: var(--spine-c);
+    color: var(--spine-ink);
+  }
+
+  .spine__rule {
+    width: 56%;
+    border-top: 2px solid color-mix(in srgb, var(--spine-ink) 42%, transparent);
+  }
+
+  .spine__title {
+    flex: 1;
+    margin: 9px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 14.5px;
+    line-height: 1;
+    letter-spacing: 0.2px;
+  }
+
+  /* Real spine: rest/hover shadow + transition */
+  .spine--a,
+  .spine--b,
+  .spine--c {
+    box-shadow:
+      inset 1px 0 0 color-mix(in srgb, #fff 22%, transparent),
+      -2px 0 6px -3px var(--ledge-edge);
+    transition: box-shadow 0.18s ease;
+  }
+
+  @media (hover: hover) {
+    .spine--a:hover,
+    .spine--b:hover,
+    .spine--c:hover {
+      box-shadow:
+        -3px 0 12px -3px var(--ledge-edge),
+        inset 1px 0 0 color-mix(in srgb, #fff 32%, transparent);
+    }
+  }
+
+  .spine:focus-visible {
+    outline: 2px solid var(--fire);
+    outline-offset: 3px;
+  }
+
+  /* Coming-soon spine: filler fill, no rules, no hover elevation */
+  .spine--soon {
+    background: color-mix(in srgb, var(--text) 10%, var(--surface));
+  }
+  .spine--soon .spine__title {
+    color: var(--muted-strong);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spine {
+      transition: none;
+    }
+  }
+</style>
