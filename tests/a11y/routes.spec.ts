@@ -162,7 +162,11 @@ test('/topics heading levels — one h1, three shelf h2s in category order', asy
   await expect(h2s.nth(1)).toHaveText('Faith');
   await expect(h2s.nth(2)).toHaveText('Reflections');
 
-  await expect(page.locator('h3, h4, h5, h6')).toHaveCount(0);
+  // Scoped to `main`: Astro's dev-only toolbar mounts a shadow-DOM tree as a
+  // sibling of `main` with its own internal headings, which an unscoped
+  // `h3, h4, h5, h6` locator would otherwise pick up (Playwright pierces
+  // open shadow roots by default).
+  await expect(page.locator('main h3, main h4, main h5, main h6')).toHaveCount(0);
 });
 
 test('/topics tag cloud links all have non-empty accessible names', async ({ page }) => {
