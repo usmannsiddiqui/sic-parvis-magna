@@ -23,7 +23,8 @@ export function essaySchema({
     updatedDate: z.coerce.date().optional(),
     category: z.enum(CATEGORIES),
     tags: z.array(z.string()).default([]),
-    coverImage: image().optional(),
+    coverImage: image().optional(), // 7:6 — the card grid crops to this
+    heroImage: image().optional(), // wide (16:9+) — the home hero is 16:7; falls back to coverImage
     featured: z.boolean().default(false),
     draft: z.boolean().default(false),
     series: z.string().optional(),
