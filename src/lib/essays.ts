@@ -11,6 +11,7 @@ export interface EssayListItem {
   draft: boolean;
   readingTimeLabel: string;
   coverImage?: ImageMetadata;
+  heroImage?: ImageMetadata;
 }
 
 /** Non-draft essays, newest first; pubDate ties broken by title asc (stable builds). */
