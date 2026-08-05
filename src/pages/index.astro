@@ -30,6 +30,7 @@ const latest = latestEssays(published, featured?.slug, LATEST_COUNT);
         title={featured.title}
         meta={`${formatDate(featured.pubDate)} · ${featured.readingTimeLabel} · ${featured.category}`}
         href={`/writing/${featured.slug}`}
+        image={featured.heroImage ?? featured.coverImage}
       />
     )
   }

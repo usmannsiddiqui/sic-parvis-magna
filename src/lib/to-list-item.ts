@@ -16,5 +16,6 @@ export function toListItem(entry: CollectionEntry<'writing'>): EssayListItem {
     draft: data.draft,
     readingTimeLabel: readingTimeLabel(entry.body ?? ''),
     coverImage: data.coverImage,
+    heroImage: data.heroImage,
   };
 }
