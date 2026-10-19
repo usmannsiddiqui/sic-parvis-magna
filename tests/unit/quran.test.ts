@@ -93,6 +93,12 @@ describe('Quran verse data', () => {
     await fetchAyah('12:53', f);
     expect(f).toHaveBeenCalledTimes(2);
   });
+  it('retries the same ref after a transient fetch failure', async () => {
+    const f = successFetch().mockRejectedValueOnce(new TypeError('fetch failed'));
+    await expect(fetchAyah('12:53', f)).rejects.toThrow('12:53');
+    await expect(fetchAyah('12:53', f)).resolves.toMatchObject({ ref: '12:53', surahName: 'Yusuf' });
+    expect(f).toHaveBeenCalledTimes(2);
+  });
   it('defaults to global fetch', async () => {
     const f = successFetch();
     vi.stubGlobal('fetch', f);

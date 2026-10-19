@@ -64,6 +64,7 @@ export async function fetchAyah(ref: string, fetchImpl: typeof fetch = fetch): P
     }
   })();
   cache.set(ref, pending);
+  pending.catch(() => cache.delete(ref));
   return pending;
 }
 
