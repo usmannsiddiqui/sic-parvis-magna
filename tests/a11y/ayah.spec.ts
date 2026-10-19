@@ -68,6 +68,29 @@ test('only one popover opens at a time', async ({ page }) => {
   await expect(page.locator('.ayah__pop').nth(1)).toHaveAttribute('data-state', 'open');
 });
 
+test('click pins a hover-open popover until outside click or a second phrase click', async ({
+  page,
+}) => {
+  const phrase = page.locator('.ayah__phrase');
+  const popover = page.locator('.ayah__pop');
+  await phrase.hover();
+  await page.waitForTimeout(400);
+  await expect(popover).toHaveAttribute('data-state', 'open');
+  await phrase.click();
+  await expect(popover).toHaveAttribute('data-state', 'open');
+  await page.locator('main h1').hover();
+  await page.waitForTimeout(500);
+  await expect(popover).toHaveAttribute('data-state', 'open');
+  await page.locator('body').click({ position: { x: 5, y: 5 } });
+  await expect(popover).toHaveAttribute('data-state', 'closed');
+  await phrase.hover();
+  await page.waitForTimeout(400);
+  await phrase.click();
+  await expect(popover).toHaveAttribute('data-state', 'open');
+  await phrase.click();
+  await expect(popover).toHaveAttribute('data-state', 'closed');
+});
+
 test.describe('touch', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
 

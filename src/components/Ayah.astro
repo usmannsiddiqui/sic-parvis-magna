@@ -126,6 +126,8 @@ const popoverId = nextAyahId(surah, ayah);
 
 <script>
   let activeRoot: HTMLElement | null = null;
+  let hoverRoot: HTMLElement | null = null;
+  let pinnedRoot: HTMLElement | null = null;
   const timers = new WeakMap<HTMLElement, { open?: number; close?: number }>();
 
   function cancelTimers(root: HTMLElement) {
@@ -157,16 +159,19 @@ const popoverId = nextAyahId(surah, ayah);
     const phrase = root.querySelector<HTMLElement>('.ayah__phrase')!;
     phrase.setAttribute('aria-expanded', 'false');
     if (activeRoot === root) activeRoot = null;
+    if (hoverRoot === root) hoverRoot = null;
+    if (pinnedRoot === root) pinnedRoot = null;
     if (returnFocus) phrase.focus({ preventScroll: true });
   }
 
-  function open(root: HTMLElement) {
+  function open(root: HTMLElement, fromHover = false) {
     cancelTimers(root);
     if (activeRoot && activeRoot !== root) close(activeRoot);
     position(root);
     root.querySelector<HTMLElement>('.ayah__pop')!.dataset.state = 'open';
     root.querySelector('.ayah__phrase')!.setAttribute('aria-expanded', 'true');
     activeRoot = root;
+    hoverRoot = fromHover ? root : null;
   }
 
   function toggle(root: HTMLElement) {
@@ -177,7 +182,16 @@ const popoverId = nextAyahId(surah, ayah);
   document.addEventListener('click', (event) => {
     const phrase = (event.target as Element).closest('.ayah__phrase');
     const root = phrase?.closest<HTMLElement>('[data-ayah]');
-    if (root) toggle(root);
+    if (!root) return;
+    const mouseClick = event instanceof PointerEvent && event.pointerType === 'mouse';
+    if (mouseClick && activeRoot === root && hoverRoot === root) {
+      cancelTimers(root);
+      hoverRoot = null;
+      pinnedRoot = root;
+    } else {
+      toggle(root);
+      if (mouseClick && activeRoot === root) pinnedRoot = root;
+    }
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && activeRoot) {
@@ -207,7 +221,7 @@ const popoverId = nextAyahId(surah, ayah);
         const root = target.closest<HTMLElement>('[data-ayah]')!;
         cancelTimers(root);
         if (target.matches('.ayah__phrase') && activeRoot !== root) {
-          timers.set(root, { open: window.setTimeout(() => open(root), 150) });
+          timers.set(root, { open: window.setTimeout(() => open(root, true), 150) });
         }
       },
       true,
@@ -219,6 +233,7 @@ const popoverId = nextAyahId(surah, ayah);
         if (!event.target.matches('.ayah__phrase, .ayah__pop')) return;
         const root = event.target.closest<HTMLElement>('[data-ayah]')!;
         cancelTimers(root);
+        if (pinnedRoot === root) return;
         timers.set(root, { close: window.setTimeout(() => close(root), 300) });
       },
       true,
