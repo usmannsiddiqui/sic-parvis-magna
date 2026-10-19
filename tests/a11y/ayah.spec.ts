@@ -132,6 +132,23 @@ test('speed cycles and updates the shared audio', async ({ page }) => {
   }
 });
 
+test('selected speed survives first playback and switching verses', async ({ page }) => {
+  await openPanel(page);
+  await page.locator('.ayah-panel__speed').click();
+  await expect(page.locator('.ayah-panel__speed')).toHaveText('0.75×');
+  await page.locator('.ayah-panel__play').click();
+  expect(await page.evaluate(() => window.__ayahAudio[0].playbackRate)).toBe(0.75);
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await page.locator('[data-ayah]').evaluate((root) => {
+    const clone = root.cloneNode(true) as HTMLElement;
+    clone.dataset.audioSrc = 'https://everyayah.com/data/Ali_Jaber_64kbps/012053.mp3';
+    root.after(clone);
+  });
+  await page.locator('.ayah__play').nth(1).click();
+  expect(await page.evaluate(() => window.__ayahAudio[0].playbackRate)).toBe(0.75);
+});
+
 test('progress, seek, replay and ended synchronize both player views', async ({ page }) => {
   await openPanel(page);
   await page.locator('.ayah-panel__play').click();

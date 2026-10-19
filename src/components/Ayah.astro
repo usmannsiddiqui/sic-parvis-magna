@@ -355,6 +355,7 @@ const popoverId = nextAyahId(surah, ayah);
     if (target.closest('.ayah-panel__speed')) {
       const rates = [1, 0.75, 1.25];
       audio.playbackRate = rates[(rates.indexOf(audio.playbackRate) + 1) % rates.length];
+      audio.defaultPlaybackRate = audio.playbackRate;
       updateProgress();
       return;
     }
