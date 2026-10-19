@@ -1,0 +1,412 @@
+---
+import { randomUUID } from 'node:crypto';
+import '@fontsource-variable/noto-nastaliq-urdu';
+import { fetchAyah, parseAyahRef } from '../lib/quran';
+
+interface Props {
+  ref: string;
+  audio?: string;
+  reciter?: string;
+}
+
+const { ref, audio, reciter } = Astro.props;
+const { surah, ayah } = parseAyahRef(ref);
+const data = await fetchAyah(ref);
+const label = `${data.surahName} ${data.ref}`;
+const reciterLabel = reciter ?? (audio ? 'Recitation' : 'Ali Jaber');
+const popoverId = `ayah-${surah}-${ayah}-${randomUUID()}`;
+---
+
+<span class="ayah" data-ayah data-ref={data.ref} data-audio-src={audio ?? data.audioUrl}>
+  <bdi
+    class="ayah__phrase"
+    lang="ar"
+    tabindex="0"
+    role="button"
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    aria-controls={popoverId}><slot /></bdi
+  ><button class="ayah__play" type="button" aria-label={`Play recitation of ${label}`}>
+    <svg aria-hidden="true" viewBox="0 0 10 10"
+      ><path d="M1 0l9 5-9 5z" fill="currentColor"></path></svg
+    >
+  </button>
+  <span
+    class="ayah__pop"
+    role="dialog"
+    aria-label={`Qur'an, ${label}`}
+    id={popoverId}
+    data-state="closed"
+  >
+    <span class="ayah__head">
+      <button class="ayah__pop-play" type="button" aria-label={`Play recitation of ${label}`}>
+        <svg aria-hidden="true" viewBox="0 0 10 10"
+          ><path d="M1 0l9 5-9 5z" fill="currentColor"></path></svg
+        >
+      </button>
+      <span class="ayah__meta">
+        <span class="ayah__label">{label}</span>
+        <span>{reciterLabel} · <span class="ayah__time">0:00</span></span>
+      </span>
+      <button class="ayah__max" type="button" aria-label="Maximise verse">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          ><path d="M8.5 1.5h4v4M5.5 12.5h-4v-4M12.5 1.5L8 6M1.5 12.5L6 8"></path></svg
+        >
+      </button>
+    </span>
+    <span class="ayah__bar" aria-hidden="true"><span class="ayah__fill"></span></span>
+    <span class="ayah__arabic" lang="ar" dir="rtl">{data.arabic}</span>
+    <span class="ayah__languages" role="group" aria-label="Translation language">
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-lang="ur" aria-pressed="false" lang="ur" dir="rtl">اردو</button>
+    </span>
+    <span class="ayah__en" lang="en">{data.en}</span>
+    <span class="ayah__ur" lang="ur" dir="rtl" hidden>{data.ur}</span>
+  </span>
+  <template class="ayah__panel-tpl">
+    <span class="ayah-panel__head">
+      <span class="ayah-panel__meta"
+        ><span class="ayah-panel__label">{label}</span><span>Recited by {reciterLabel}</span></span
+      >
+      <button class="ayah-panel__close" type="button" aria-label="Close verse">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"></path></svg
+        >
+      </button>
+    </span>
+    <span class="ayah-panel__arabic" lang="ar" dir="rtl">{data.arabic}</span>
+    <span class="ayah-panel__controls">
+      <button class="ayah-panel__play" type="button" aria-label={`Play recitation of ${label}`}>
+        <svg aria-hidden="true" viewBox="0 0 10 10"
+          ><path d="M1 0l9 5-9 5z" fill="currentColor"></path></svg
+        >
+      </button>
+      <span class="ayah-panel__elapsed">0:00</span>
+      <input class="ayah-panel__seek" type="range" aria-label="Seek" min="0" max="100" value="0" />
+      <span class="ayah-panel__duration">0:00</span>
+      <button class="ayah-panel__replay" type="button" aria-label="Replay recitation">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"><path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M2.5 1.5v2.8h2.8"></path></svg
+        >
+      </button>
+      <button class="ayah-panel__speed" type="button" aria-label="Playback speed">1×</button>
+    </span>
+    <span class="ayah-panel__translations">
+      <span
+        ><span class="ayah-panel__language">English</span><span class="ayah-panel__en" lang="en"
+          >{data.en}</span
+        ></span
+      >
+      <span dir="rtl"
+        ><span class="ayah-panel__language" lang="ur" dir="rtl">اردو</span><span
+          class="ayah-panel__ur"
+          lang="ur"
+          dir="rtl">{data.ur}</span
+        ></span
+      >
+    </span>
+  </template>
+</span>
+
+<style>
+  .ayah,
+  :global(.ayah-panel) {
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-strong: rgba(255, 255, 255, 0.72);
+    --glass-edge: rgba(255, 255, 255, 0.7);
+    --scrim: rgba(36, 31, 26, 0.28);
+    --glass-shadow: 0 18px 48px rgba(36, 31, 26, 0.18);
+  }
+  :global(:root[data-theme='dark'] :is(.ayah, .ayah-panel)) {
+    --glass: rgba(26, 32, 41, 0.55);
+    --glass-strong: rgba(26, 32, 41, 0.72);
+    --glass-edge: rgba(231, 226, 214, 0.14);
+    --scrim: rgba(0, 0, 0, 0.45);
+    --glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  }
+  .ayah {
+    position: relative;
+  }
+  .ayah__phrase {
+    font-family: var(--font-arabic);
+    font-size: 1.1em;
+    unicode-bidi: isolate;
+    border-bottom: 1px dotted var(--fire);
+    cursor: help;
+  }
+  .ayah button,
+  :global(.ayah-panel button) {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--fire);
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: border-color 150ms ease;
+  }
+  .ayah button:hover,
+  :global(.ayah-panel button:hover) {
+    border-color: var(--fire);
+  }
+  .ayah :focus-visible,
+  :global(.ayah-panel :focus-visible) {
+    outline: 2px solid var(--fire);
+    outline-offset: 3px;
+  }
+  .ayah__play {
+    width: 18px;
+    height: 18px;
+    margin-inline-start: 4px;
+    border-radius: 50%;
+    vertical-align: middle;
+  }
+  .ayah__play svg {
+    width: 7px;
+    height: 7px;
+  }
+  .ayah__pop {
+    position: absolute;
+    z-index: 10;
+    display: block;
+    box-sizing: border-box;
+    width: min(340px, calc(100vw - 24px));
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 14px 16px 16px;
+    border: 1px solid var(--glass-edge);
+    border-radius: 16px;
+    background: var(--glass);
+    color: var(--text);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    text-align: left;
+    white-space: normal;
+    font-family: var(--font-serif);
+    transition: opacity 180ms ease;
+  }
+  .ayah__pop[data-state='closed'] {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .ayah__pop[data-state='open'] {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+  .ayah__head,
+  :global(.ayah-panel__head) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ayah .ayah__pop-play,
+  :global(.ayah-panel .ayah-panel__play) {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--fire);
+    color: var(--bg);
+    border-color: var(--fire);
+  }
+  .ayah__pop-play svg,
+  :global(.ayah-panel__play svg) {
+    width: 11px;
+    height: 11px;
+  }
+  .ayah__meta,
+  :global(.ayah-panel__meta) {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  .ayah__label,
+  :global(.ayah-panel__label) {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .ayah .ayah__max,
+  :global(.ayah-panel .ayah-panel__close),
+  :global(.ayah-panel .ayah-panel__replay) {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+  }
+  .ayah__max svg,
+  :global(.ayah-panel__close svg),
+  :global(.ayah-panel__replay svg) {
+    width: 14px;
+    height: 14px;
+  }
+  .ayah__bar {
+    display: block;
+    height: 3px;
+    margin: 12px 0 14px;
+    border-radius: 3px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .ayah__fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--fire);
+  }
+  .ayah__arabic {
+    display: block;
+    margin-block-end: 12px;
+    font-family: var(--font-arabic);
+    font-size: 22px;
+    line-height: 1.8;
+    text-align: right;
+  }
+  .ayah__languages {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .ayah__languages button,
+  :global(.ayah-panel .ayah-panel__speed) {
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .ayah__languages button[aria-pressed='true'] {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .ayah__en,
+  :global(.ayah-panel__en) {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 15px;
+    line-height: 1.55;
+    font-style: italic;
+  }
+  .ayah__ur,
+  :global(.ayah-panel__ur) {
+    display: block;
+    font-family: 'Noto Nastaliq Urdu Variable', var(--font-arabic);
+    font-size: 16px;
+    line-height: 2.1;
+  }
+  .ayah__en[hidden],
+  .ayah__ur[hidden] {
+    display: none;
+  }
+  :global(.ayah-panel) {
+    box-sizing: border-box;
+    width: min(560px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    margin: auto;
+    padding: 20px clamp(18px, 4vw, 32px) 26px;
+    border: 1px solid var(--glass-edge);
+    border-radius: 22px;
+    background: var(--glass-strong);
+    color: var(--text);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  }
+  :global(.ayah-panel[open]) {
+    display: grid;
+    gap: 18px;
+  }
+  :global(.ayah-panel:not([open])) {
+    display: none;
+  }
+  :global(.ayah-panel::backdrop) {
+    background: var(--scrim);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  :global(.ayah-panel__arabic) {
+    display: block;
+    font-family: var(--font-arabic);
+    font-size: clamp(28px, 7vw, 40px);
+    line-height: 1.8;
+    text-align: center;
+  }
+  :global(.ayah-panel__controls) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  :global(.ayah-panel__seek) {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    accent-color: var(--fire);
+  }
+  :global(.ayah-panel__translations) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  :global(.ayah-panel__language) {
+    display: block;
+    margin-bottom: 6px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  :global(.ayah-panel__en) {
+    font-size: 16px;
+  }
+  :global(.ayah-panel__ur) {
+    font-size: 17px;
+  }
+  @media (max-width: 520px) {
+    :global(.ayah-panel__translations) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    :global(.ayah-panel__controls) {
+      gap: 6px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ayah__pop,
+    .ayah button,
+    :global(.ayah-panel button) {
+      transition: none;
+    }
+  }
+</style>

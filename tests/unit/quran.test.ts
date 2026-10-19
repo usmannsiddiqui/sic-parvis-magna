@@ -68,13 +68,11 @@ describe('Quran verse data', () => {
     [500, 200],
     [200, 404],
   ])('throws with the ref on HTTP %s / API %s', async (status, code) => {
-    const f = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ code, status: 'NOT FOUND', data: 'out of range' }), {
-          status,
-        }),
-      );
+    const f = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ code, status: 'NOT FOUND', data: 'out of range' }), {
+        status,
+      }),
+    );
     await expect(fetchAyah('12:999', f)).rejects.toThrow('12:999');
   });
   it('fetches each ref once, including concurrent requests', async () => {
@@ -96,7 +94,10 @@ describe('Quran verse data', () => {
   it('retries the same ref after a transient fetch failure', async () => {
     const f = successFetch().mockRejectedValueOnce(new TypeError('fetch failed'));
     await expect(fetchAyah('12:53', f)).rejects.toThrow('12:53');
-    await expect(fetchAyah('12:53', f)).resolves.toMatchObject({ ref: '12:53', surahName: 'Yusuf' });
+    await expect(fetchAyah('12:53', f)).resolves.toMatchObject({
+      ref: '12:53',
+      surahName: 'Yusuf',
+    });
     expect(f).toHaveBeenCalledTimes(2);
   });
   it('defaults to global fetch', async () => {
