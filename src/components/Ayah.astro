@@ -1,7 +1,7 @@
 ---
-import { randomUUID } from 'node:crypto';
 import '@fontsource-variable/noto-nastaliq-urdu';
 import { fetchAyah, parseAyahRef } from '../lib/quran';
+import { nextAyahId } from '../lib/ayah-id';
 
 interface Props {
   ref: string;
@@ -14,7 +14,7 @@ const { surah, ayah } = parseAyahRef(ref);
 const data = await fetchAyah(ref);
 const label = `${data.surahName} ${data.ref}`;
 const reciterLabel = reciter ?? (audio ? 'Recitation' : 'Ali Jaber');
-const popoverId = `ayah-${surah}-${ayah}-${randomUUID()}`;
+const popoverId = nextAyahId(surah, ayah);
 ---
 
 <span class="ayah" data-ayah data-ref={data.ref} data-audio-src={audio ?? data.audioUrl}>
@@ -124,6 +124,119 @@ const popoverId = `ayah-${surah}-${ayah}-${randomUUID()}`;
   </template>
 </span>
 
+<script>
+  let activeRoot: HTMLElement | null = null;
+  const timers = new WeakMap<HTMLElement, { open?: number; close?: number }>();
+
+  function cancelTimers(root: HTMLElement) {
+    const pending = timers.get(root);
+    window.clearTimeout(pending?.open);
+    window.clearTimeout(pending?.close);
+    timers.delete(root);
+  }
+
+  function position(root: HTMLElement) {
+    const phrase = root.querySelector<HTMLElement>('.ayah__phrase')!;
+    const popover = root.querySelector<HTMLElement>('.ayah__pop')!;
+    const anchor = phrase.getBoundingClientRect();
+    const margin = 12;
+    const gap = 10;
+    const width = document.documentElement.clientWidth;
+    const height = window.innerHeight;
+    popover.style.maxHeight = `${Math.max(0, height - margin * 2)}px`;
+    const box = popover.getBoundingClientRect();
+    const above = anchor.top - gap - box.height;
+    const top = above >= margin ? above : anchor.bottom + gap;
+    popover.style.top = `${Math.max(margin, Math.min(top, height - box.height - margin))}px`;
+    popover.style.left = `${Math.max(margin, Math.min(anchor.left + anchor.width / 2 - box.width / 2, width - box.width - margin))}px`;
+  }
+
+  function close(root: HTMLElement, { returnFocus = false } = {}) {
+    cancelTimers(root);
+    root.querySelector<HTMLElement>('.ayah__pop')!.dataset.state = 'closed';
+    const phrase = root.querySelector<HTMLElement>('.ayah__phrase')!;
+    phrase.setAttribute('aria-expanded', 'false');
+    if (activeRoot === root) activeRoot = null;
+    if (returnFocus) phrase.focus({ preventScroll: true });
+  }
+
+  function open(root: HTMLElement) {
+    cancelTimers(root);
+    if (activeRoot && activeRoot !== root) close(activeRoot);
+    position(root);
+    root.querySelector<HTMLElement>('.ayah__pop')!.dataset.state = 'open';
+    root.querySelector('.ayah__phrase')!.setAttribute('aria-expanded', 'true');
+    activeRoot = root;
+  }
+
+  function toggle(root: HTMLElement) {
+    if (activeRoot === root) close(root);
+    else open(root);
+  }
+
+  document.addEventListener('click', (event) => {
+    const phrase = (event.target as Element).closest('.ayah__phrase');
+    const root = phrase?.closest<HTMLElement>('[data-ayah]');
+    if (root) toggle(root);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && activeRoot) {
+      event.preventDefault();
+      close(activeRoot, { returnFocus: true });
+      return;
+    }
+    const phrase = (event.target as Element).closest('.ayah__phrase');
+    const root = phrase?.closest<HTMLElement>('[data-ayah]');
+    if (root && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      if (!event.repeat) toggle(root);
+    }
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (activeRoot && !activeRoot.contains(event.target as Node)) close(activeRoot);
+  });
+
+  if (matchMedia('(hover: hover)').matches) {
+    // Capture non-bubbling enter/leave events, including later-added verses.
+    document.addEventListener(
+      'pointerenter',
+      (event) => {
+        if (!(event.target instanceof Element) || event.pointerType === 'touch') return;
+        const target = event.target;
+        if (!target.matches('.ayah__phrase, .ayah__pop')) return;
+        const root = target.closest<HTMLElement>('[data-ayah]')!;
+        cancelTimers(root);
+        if (target.matches('.ayah__phrase') && activeRoot !== root) {
+          timers.set(root, { open: window.setTimeout(() => open(root), 150) });
+        }
+      },
+      true,
+    );
+    document.addEventListener(
+      'pointerleave',
+      (event) => {
+        if (!(event.target instanceof Element) || event.pointerType === 'touch') return;
+        if (!event.target.matches('.ayah__phrase, .ayah__pop')) return;
+        const root = event.target.closest<HTMLElement>('[data-ayah]')!;
+        cancelTimers(root);
+        timers.set(root, { close: window.setTimeout(() => close(root), 300) });
+      },
+      true,
+    );
+  }
+
+  window.addEventListener('resize', () => {
+    if (activeRoot) position(activeRoot);
+  });
+  document.addEventListener(
+    'scroll',
+    () => {
+      if (activeRoot) position(activeRoot);
+    },
+    true,
+  );
+</script>
+
 <style>
   .ayah,
   :global(.ayah-panel) {
@@ -184,14 +297,12 @@ const popoverId = `ayah-${surah}-${ayah}-${randomUUID()}`;
     height: 7px;
   }
   .ayah__pop {
-    position: absolute;
+    position: fixed;
     z-index: 10;
     display: block;
     box-sizing: border-box;
     width: min(340px, calc(100vw - 24px));
-    bottom: calc(100% + 10px);
-    left: 50%;
-    transform: translateX(-50%);
+    overflow-y: auto;
     padding: 14px 16px 16px;
     border: 1px solid var(--glass-edge);
     border-radius: 16px;
