@@ -1,0 +1,739 @@
+---
+import '@fontsource-variable/noto-nastaliq-urdu';
+import { fetchAyah, parseAyahRef } from '../lib/quran';
+import { nextAyahId } from '../lib/ayah-id';
+
+interface Props {
+  ref: string;
+  audio?: string;
+  reciter?: string;
+}
+
+const { ref, audio, reciter } = Astro.props;
+const { surah, ayah } = parseAyahRef(ref);
+const data = await fetchAyah(ref);
+const label = `${data.surahName} ${data.ref}`;
+const reciterLabel = reciter ?? (audio ? 'Recitation' : 'Ali Jaber');
+const popoverId = nextAyahId(surah, ayah);
+---
+
+<span class="ayah" data-ayah data-ref={data.ref} data-audio-src={audio ?? data.audioUrl}>
+  <bdi
+    class="ayah__phrase"
+    lang="ar"
+    tabindex="0"
+    role="button"
+    aria-haspopup="dialog"
+    aria-expanded="false"
+    aria-controls={popoverId}><slot /></bdi
+  ><button class="ayah__play" type="button" aria-label={`Play recitation of ${label}`}>
+    <svg aria-hidden="true" viewBox="0 0 10 10"
+      ><path d="M1 0l9 5-9 5z" fill="currentColor"></path></svg
+    >
+  </button>
+  <span
+    class="ayah__pop"
+    role="dialog"
+    aria-label={`Qur'an, ${label}`}
+    id={popoverId}
+    data-state="closed"
+  >
+    <span class="ayah__head">
+      <button class="ayah__pop-play" type="button" aria-label={`Play recitation of ${label}`}>
+        <svg aria-hidden="true" viewBox="0 0 10 10"
+          ><path d="M1 0l9 5-9 5z" fill="currentColor"></path></svg
+        >
+      </button>
+      <span class="ayah__meta">
+        <span class="ayah__label">{label}</span>
+        <span>{reciterLabel} · <span class="ayah__time">0:00</span></span>
+      </span>
+      <button class="ayah__max" type="button" aria-label="Maximise verse">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          ><path d="M8.5 1.5h4v4M5.5 12.5h-4v-4M12.5 1.5L8 6M1.5 12.5L6 8"></path></svg
+        >
+      </button>
+    </span>
+    <span class="ayah__bar" aria-hidden="true"><span class="ayah__fill"></span></span>
+    <span class="ayah__arabic" lang="ar" dir="rtl">{data.arabic}</span>
+    <span class="ayah__languages" role="group" aria-label="Translation language">
+      <button type="button" data-lang="en" aria-pressed="true">English</button>
+      <button type="button" data-lang="ur" aria-pressed="false" lang="ur" dir="rtl">اردو</button>
+    </span>
+    <span class="ayah__en" lang="en">{data.en}</span>
+    <span class="ayah__ur" lang="ur" dir="rtl" hidden>{data.ur}</span>
+  </span>
+  <template class="ayah__panel-tpl">
+    <span class="ayah-panel__head">
+      <span class="ayah-panel__meta"
+        ><span class="ayah-panel__label">{label}</span><span>Recited by {reciterLabel}</span></span
+      >
+      <button class="ayah-panel__close" type="button" aria-label="Close verse">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"></path></svg
+        >
+      </button>
+    </span>
+    <span class="ayah-panel__arabic" lang="ar" dir="rtl">{data.arabic}</span>
+    <span class="ayah-panel__controls">
+      <button class="ayah-panel__play" type="button" aria-label={`Play recitation of ${label}`}>
+        <svg aria-hidden="true" viewBox="0 0 10 10"
+          ><path d="M1 0l9 5-9 5z" fill="currentColor"></path></svg
+        >
+      </button>
+      <span class="ayah-panel__elapsed">0:00</span>
+      <input class="ayah-panel__seek" type="range" aria-label="Seek" min="0" max="100" value="0" />
+      <span class="ayah-panel__duration">0:00</span>
+      <button class="ayah-panel__replay" type="button" aria-label="Replay recitation">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"><path d="M2.5 7a4.5 4.5 0 1 0 1.3-3.2M2.5 1.5v2.8h2.8"></path></svg
+        >
+      </button>
+      <button class="ayah-panel__speed" type="button" aria-label="Playback speed">1×</button>
+    </span>
+    <span class="ayah-panel__translations">
+      <span
+        ><span class="ayah-panel__language">English</span><span class="ayah-panel__en" lang="en"
+          >{data.en}</span
+        ></span
+      >
+      <span dir="rtl"
+        ><span class="ayah-panel__language" lang="ur" dir="rtl">اردو</span><span
+          class="ayah-panel__ur"
+          lang="ur"
+          dir="rtl">{data.ur}</span
+        ></span
+      >
+    </span>
+  </template>
+</span>
+
+<script>
+  let activeRoot: HTMLElement | null = null;
+  let hoverRoot: HTMLElement | null = null;
+  let pinnedRoot: HTMLElement | null = null;
+  const audio = new Audio();
+  audio.preload = 'none';
+  let audioRoot: HTMLElement | null = null;
+  let playRequest = 0;
+  let panel: HTMLDialogElement | null = null;
+  let panelRoot: HTMLElement | null = null;
+  const timers = new WeakMap<HTMLElement, { open?: number; close?: number }>();
+
+  function updatePlayButton(button: HTMLButtonElement, playing: boolean) {
+    button.setAttribute(
+      'aria-label',
+      (button.getAttribute('aria-label') ?? '').replace(
+        /^(Play|Pause)/,
+        playing ? 'Pause' : 'Play',
+      ),
+    );
+    button
+      .querySelector('path')
+      ?.setAttribute('d', playing ? 'M1 0h3v10H1zM6 0h3v10H6z' : 'M1 0l9 5-9 5z');
+  }
+
+  function setPlaying(root: HTMLElement, playing: boolean) {
+    if (playing) root.dataset.playing = 'true';
+    else delete root.dataset.playing;
+    root
+      .querySelectorAll<HTMLButtonElement>('.ayah__play, .ayah__pop-play')
+      .forEach((button) => updatePlayButton(button, playing));
+    if (panelRoot === root && panel) {
+      panel
+        .querySelectorAll<HTMLButtonElement>('.ayah-panel__play')
+        .forEach((button) => updatePlayButton(button, playing));
+    }
+  }
+
+  function timeLabel(seconds: number) {
+    const value = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+    return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
+  }
+
+  function updateProgress() {
+    const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    const progress = duration > 0 ? Math.min(100, (audio.currentTime / duration) * 100) : 0;
+    if (audioRoot) {
+      audioRoot.querySelector<HTMLElement>('.ayah__fill')!.style.width = `${progress}%`;
+      audioRoot.querySelector<HTMLElement>('.ayah__time')!.textContent =
+        `${timeLabel(audio.currentTime)} / ${timeLabel(duration)}`;
+    }
+    if (panel && panelRoot) {
+      const matches = panelRoot === audioRoot;
+      panel.querySelector<HTMLElement>('.ayah-panel__elapsed')!.textContent = timeLabel(
+        matches ? audio.currentTime : 0,
+      );
+      panel.querySelector<HTMLElement>('.ayah-panel__duration')!.textContent = timeLabel(
+        matches ? duration : 0,
+      );
+      panel.querySelector<HTMLInputElement>('.ayah-panel__seek')!.value = String(
+        matches ? progress : 0,
+      );
+      panel.querySelector<HTMLElement>('.ayah-panel__speed')!.textContent =
+        `${audio.playbackRate}×`;
+    }
+  }
+
+  function selectAudio(root: HTMLElement) {
+    if (audioRoot === root) return;
+    audio.pause();
+    if (audioRoot) setPlaying(audioRoot, false);
+    audioRoot = root;
+    audio.src = root.dataset.audioSrc!;
+    audio.currentTime = 0;
+  }
+
+  async function play(root: HTMLElement) {
+    const request = ++playRequest;
+    selectAudio(root);
+    document
+      .querySelectorAll<HTMLElement>('[data-ayah]')
+      .forEach((other) => setPlaying(other, other === root));
+    cancelTimers(root);
+    updateProgress();
+    try {
+      await audio.play();
+    } catch {
+      // A blocked or failed request must not leave a false pause icon.
+      if (request === playRequest && audioRoot === root) setPlaying(root, false);
+    }
+  }
+
+  function toggleAudio(root: HTMLElement) {
+    if (audioRoot === root && root.dataset.playing === 'true') {
+      ++playRequest;
+      audio.pause();
+    } else void play(root);
+  }
+
+  function scheduleClose(root: HTMLElement) {
+    cancelTimers(root);
+    if (
+      pinnedRoot === root ||
+      root.dataset.playing === 'true' ||
+      (panel?.open && panelRoot === root)
+    )
+      return;
+    timers.set(root, { close: window.setTimeout(() => close(root), 300) });
+  }
+
+  for (const name of ['pause', 'ended', 'error']) {
+    audio.addEventListener(name, () => {
+      if (!audioRoot) return;
+      setPlaying(audioRoot, false);
+      if (activeRoot === audioRoot && !audioRoot.matches(':hover')) scheduleClose(audioRoot);
+    });
+  }
+  for (const name of ['timeupdate', 'loadedmetadata', 'durationchange']) {
+    audio.addEventListener(name, updateProgress);
+  }
+
+  function maximise(root: HTMLElement) {
+    cancelTimers(root);
+    pinnedRoot = root;
+    if (!panel) {
+      panel = document.createElement('dialog');
+      panel.className = 'ayah-panel';
+      document.body.append(panel);
+      panel.addEventListener('close', () => {
+        if (!panelRoot) return;
+        open(panelRoot);
+        pinnedRoot = panelRoot;
+        panelRoot.querySelector<HTMLElement>('.ayah__max')!.focus({ preventScroll: true });
+      });
+    }
+    panelRoot = root;
+    const template = root.querySelector<HTMLTemplateElement>('.ayah__panel-tpl')!;
+    panel.replaceChildren(template.content.cloneNode(true));
+    panel.setAttribute('aria-label', root.querySelector('.ayah__pop')!.getAttribute('aria-label')!);
+    setPlaying(root, root.dataset.playing === 'true');
+    updateProgress();
+    panel.showModal();
+  }
+
+  function cancelTimers(root: HTMLElement) {
+    const pending = timers.get(root);
+    window.clearTimeout(pending?.open);
+    window.clearTimeout(pending?.close);
+    timers.delete(root);
+  }
+
+  function position(root: HTMLElement) {
+    const phrase = root.querySelector<HTMLElement>('.ayah__phrase')!;
+    const popover = root.querySelector<HTMLElement>('.ayah__pop')!;
+    const anchor = phrase.getBoundingClientRect();
+    const margin = 12;
+    const gap = 10;
+    const width = document.documentElement.clientWidth;
+    const height = window.innerHeight;
+    popover.style.maxHeight = `${Math.max(0, height - margin * 2)}px`;
+    const box = popover.getBoundingClientRect();
+    const above = anchor.top - gap - box.height;
+    const top = above >= margin ? above : anchor.bottom + gap;
+    popover.style.top = `${Math.max(margin, Math.min(top, height - box.height - margin))}px`;
+    popover.style.left = `${Math.max(margin, Math.min(anchor.left + anchor.width / 2 - box.width / 2, width - box.width - margin))}px`;
+  }
+
+  function close(root: HTMLElement, { returnFocus = false } = {}) {
+    cancelTimers(root);
+    root.querySelector<HTMLElement>('.ayah__pop')!.dataset.state = 'closed';
+    const phrase = root.querySelector<HTMLElement>('.ayah__phrase')!;
+    phrase.setAttribute('aria-expanded', 'false');
+    if (activeRoot === root) activeRoot = null;
+    if (hoverRoot === root) hoverRoot = null;
+    if (pinnedRoot === root) pinnedRoot = null;
+    if (returnFocus) phrase.focus({ preventScroll: true });
+  }
+
+  function open(root: HTMLElement, fromHover = false) {
+    cancelTimers(root);
+    if (activeRoot && activeRoot !== root) close(activeRoot);
+    position(root);
+    root.querySelector<HTMLElement>('.ayah__pop')!.dataset.state = 'open';
+    root.querySelector('.ayah__phrase')!.setAttribute('aria-expanded', 'true');
+    activeRoot = root;
+    hoverRoot = fromHover ? root : null;
+  }
+
+  function toggle(root: HTMLElement) {
+    if (activeRoot === root) close(root);
+    else open(root);
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as Element;
+    if (panel?.open && target === panel) {
+      const box = panel.getBoundingClientRect();
+      if (
+        event.clientX < box.left ||
+        event.clientX > box.right ||
+        event.clientY < box.top ||
+        event.clientY > box.bottom
+      )
+        panel.close();
+      return;
+    }
+    const root =
+      target.closest<HTMLElement>('[data-ayah]') ??
+      (target.closest('.ayah-panel') ? panelRoot : null);
+    if (!root) return;
+    if (target.closest('.ayah__play, .ayah__pop-play, .ayah-panel__play')) {
+      toggleAudio(root);
+      return;
+    }
+    if (target.closest('.ayah__max')) {
+      maximise(root);
+      return;
+    }
+    if (target.closest('.ayah-panel__close')) {
+      panel?.close();
+      return;
+    }
+    if (target.closest('.ayah-panel__replay')) {
+      selectAudio(root);
+      audio.currentTime = 0;
+      void play(root);
+      return;
+    }
+    if (target.closest('.ayah-panel__speed')) {
+      const rates = [1, 0.75, 1.25];
+      audio.playbackRate = rates[(rates.indexOf(audio.playbackRate) + 1) % rates.length];
+      audio.defaultPlaybackRate = audio.playbackRate;
+      updateProgress();
+      return;
+    }
+    const language = target.closest<HTMLButtonElement>('[data-lang]');
+    if (language) {
+      root
+        .querySelectorAll<HTMLButtonElement>('[data-lang]')
+        .forEach((button) => button.setAttribute('aria-pressed', String(button === language)));
+      root.querySelector<HTMLElement>('.ayah__en')!.hidden = language.dataset.lang !== 'en';
+      root.querySelector<HTMLElement>('.ayah__ur')!.hidden = language.dataset.lang !== 'ur';
+      position(root);
+      return;
+    }
+    if (!target.closest('.ayah__phrase')) return;
+    const mouseClick = event instanceof PointerEvent && event.pointerType === 'mouse';
+    if (mouseClick && activeRoot === root && hoverRoot === root) {
+      cancelTimers(root);
+      hoverRoot = null;
+      pinnedRoot = root;
+    } else {
+      toggle(root);
+      if (mouseClick && activeRoot === root) pinnedRoot = root;
+    }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (panel?.open) return; // Native dialog Escape handling restores focus via close.
+    if (event.key === 'Escape' && activeRoot) {
+      event.preventDefault();
+      close(activeRoot, { returnFocus: true });
+      return;
+    }
+    const phrase = (event.target as Element).closest('.ayah__phrase');
+    const root = phrase?.closest<HTMLElement>('[data-ayah]');
+    if (root && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      if (!event.repeat) toggle(root);
+    }
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (panel?.open) return;
+    if (activeRoot && !activeRoot.contains(event.target as Node)) close(activeRoot);
+  });
+
+  document.addEventListener('input', (event) => {
+    const input = event.target;
+    if (
+      !(input instanceof HTMLInputElement) ||
+      !input.matches('.ayah-panel__seek') ||
+      panelRoot !== audioRoot
+    )
+      return;
+    if (Number.isFinite(audio.duration)) {
+      audio.currentTime = (Number(input.value) / 100) * audio.duration;
+      updateProgress();
+    }
+  });
+
+  if (matchMedia('(hover: hover)').matches) {
+    // Capture non-bubbling enter/leave events, including later-added verses.
+    document.addEventListener(
+      'pointerenter',
+      (event) => {
+        if (!(event.target instanceof Element) || event.pointerType === 'touch') return;
+        const target = event.target;
+        if (!target.matches('.ayah__phrase, .ayah__pop')) return;
+        const root = target.closest<HTMLElement>('[data-ayah]')!;
+        cancelTimers(root);
+        if (target.matches('.ayah__phrase') && activeRoot !== root) {
+          timers.set(root, { open: window.setTimeout(() => open(root, true), 150) });
+        }
+      },
+      true,
+    );
+    document.addEventListener(
+      'pointerleave',
+      (event) => {
+        if (!(event.target instanceof Element) || event.pointerType === 'touch') return;
+        if (!event.target.matches('.ayah__phrase, .ayah__pop')) return;
+        const root = event.target.closest<HTMLElement>('[data-ayah]')!;
+        scheduleClose(root);
+      },
+      true,
+    );
+  }
+
+  window.addEventListener('resize', () => {
+    if (activeRoot) position(activeRoot);
+  });
+  document.addEventListener(
+    'scroll',
+    () => {
+      if (activeRoot) position(activeRoot);
+    },
+    true,
+  );
+</script>
+
+<style>
+  .ayah,
+  :global(.ayah-panel) {
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-strong: rgba(255, 255, 255, 0.72);
+    --glass-edge: rgba(255, 255, 255, 0.7);
+    --scrim: rgba(36, 31, 26, 0.28);
+    --glass-shadow: 0 18px 48px rgba(36, 31, 26, 0.18);
+  }
+  :global(:root[data-theme='dark'] :is(.ayah, .ayah-panel)) {
+    --glass: rgba(26, 32, 41, 0.55);
+    --glass-strong: rgba(26, 32, 41, 0.72);
+    --glass-edge: rgba(231, 226, 214, 0.14);
+    --scrim: rgba(0, 0, 0, 0.45);
+    --glass-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  }
+  .ayah {
+    position: relative;
+  }
+  .ayah__phrase {
+    font-family: var(--font-arabic);
+    font-size: 1.1em;
+    unicode-bidi: isolate;
+    border-bottom: 1px dotted var(--fire);
+    cursor: help;
+  }
+  .ayah button,
+  :global(.ayah-panel button) {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--fire);
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: border-color 150ms ease;
+  }
+  .ayah button:hover,
+  :global(.ayah-panel button:hover) {
+    border-color: var(--fire);
+  }
+  .ayah :focus-visible,
+  :global(.ayah-panel :focus-visible) {
+    outline: 2px solid var(--fire);
+    outline-offset: 3px;
+  }
+  .ayah__play {
+    width: 18px;
+    height: 18px;
+    margin-inline-start: 4px;
+    border-radius: 50%;
+    vertical-align: middle;
+  }
+  .ayah__play svg {
+    width: 7px;
+    height: 7px;
+  }
+  .ayah__pop {
+    position: fixed;
+    z-index: 10;
+    display: block;
+    box-sizing: border-box;
+    width: min(340px, calc(100vw - 24px));
+    overflow-y: auto;
+    padding: 14px 16px 16px;
+    border: 1px solid var(--glass-edge);
+    border-radius: 16px;
+    background: var(--glass);
+    color: var(--text);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    text-align: left;
+    white-space: normal;
+    font-family: var(--font-serif);
+    transition: opacity 180ms ease;
+  }
+  .ayah__pop[data-state='closed'] {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .ayah__pop[data-state='open'] {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+  .ayah__head,
+  :global(.ayah-panel__head) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ayah .ayah__pop-play,
+  :global(.ayah-panel .ayah-panel__play) {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--fire);
+    color: var(--bg);
+    border-color: var(--fire);
+  }
+  .ayah__pop-play svg,
+  :global(.ayah-panel__play svg) {
+    width: 11px;
+    height: 11px;
+  }
+  .ayah__meta,
+  :global(.ayah-panel__meta) {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  .ayah__label,
+  :global(.ayah-panel__label) {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .ayah .ayah__max,
+  :global(.ayah-panel .ayah-panel__close),
+  :global(.ayah-panel .ayah-panel__replay) {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+  }
+  .ayah__max svg,
+  :global(.ayah-panel__close svg),
+  :global(.ayah-panel__replay svg) {
+    width: 14px;
+    height: 14px;
+  }
+  .ayah__bar {
+    display: block;
+    height: 3px;
+    margin: 12px 0 14px;
+    border-radius: 3px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .ayah__fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--fire);
+  }
+  .ayah__arabic {
+    display: block;
+    margin-block-end: 12px;
+    font-family: var(--font-arabic);
+    font-size: 22px;
+    line-height: 1.8;
+    text-align: right;
+  }
+  .ayah__languages {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .ayah__languages button,
+  :global(.ayah-panel .ayah-panel__speed) {
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .ayah__languages button[aria-pressed='true'] {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .ayah__en,
+  :global(.ayah-panel__en) {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 15px;
+    line-height: 1.55;
+    font-style: italic;
+  }
+  .ayah__ur,
+  :global(.ayah-panel__ur) {
+    display: block;
+    font-family: 'Noto Nastaliq Urdu Variable', var(--font-arabic);
+    font-size: 16px;
+    line-height: 2.1;
+  }
+  .ayah__en[hidden],
+  .ayah__ur[hidden] {
+    display: none;
+  }
+  :global(.ayah-panel) {
+    box-sizing: border-box;
+    width: min(560px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    margin: auto;
+    padding: 20px clamp(18px, 4vw, 32px) 26px;
+    border: 1px solid var(--glass-edge);
+    border-radius: 22px;
+    background: var(--glass-strong);
+    color: var(--text);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  }
+  :global(.ayah-panel[open]) {
+    display: grid;
+    gap: 18px;
+  }
+  :global(.ayah-panel:not([open])) {
+    display: none;
+  }
+  :global(.ayah-panel::backdrop) {
+    background: var(--scrim);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  :global(.ayah-panel__arabic) {
+    display: block;
+    font-family: var(--font-arabic);
+    font-size: clamp(28px, 7vw, 40px);
+    line-height: 1.8;
+    text-align: center;
+  }
+  :global(.ayah-panel__controls) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  :global(.ayah-panel__seek) {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    accent-color: var(--fire);
+  }
+  :global(.ayah-panel__translations) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+  :global(.ayah-panel__language) {
+    display: block;
+    margin-bottom: 6px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  :global(.ayah-panel__en) {
+    font-size: 16px;
+  }
+  :global(.ayah-panel__ur) {
+    font-size: 17px;
+  }
+  @media (max-width: 520px) {
+    :global(.ayah-panel__translations) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    :global(.ayah-panel__controls) {
+      gap: 6px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ayah__pop,
+    .ayah button,
+    :global(.ayah-panel button) {
+      transition: none;
+    }
+  }
+</style>
