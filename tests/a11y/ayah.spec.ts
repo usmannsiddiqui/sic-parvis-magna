@@ -1,10 +1,217 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const ESSAY = '/writing/sample-what-the-fast-teaches';
 
+declare global {
+  interface Window {
+    __ayahAudio: HTMLAudioElement[];
+    __playCalls: number;
+  }
+}
+
+async function openPanel(page: Page) {
+  await page.locator('.ayah__phrase').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('.ayah__max').click();
+  await expect(page.locator('dialog.ayah-panel')).toBeVisible();
+}
+
 test.beforeEach(async ({ page }) => {
+  await page.route('https://everyayah.com/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    window.__ayahAudio = [];
+    const NativeAudio = window.Audio;
+    window.Audio = class extends NativeAudio {
+      constructor() {
+        super();
+        window.__ayahAudio.push(this);
+      }
+    };
+    HTMLMediaElement.prototype.play = function () {
+      Object.defineProperty(this, 'paused', { configurable: true, value: false });
+      Object.defineProperty(this, 'duration', { configurable: true, value: 60 });
+      this.dispatchEvent(new Event('loadedmetadata'));
+      this.dispatchEvent(new Event('play'));
+      return Promise.resolve();
+    };
+    HTMLMediaElement.prototype.pause = function () {
+      Object.defineProperty(this, 'paused', { configurable: true, value: true });
+      this.dispatchEvent(new Event('pause'));
+    };
+  });
   await page.goto(ESSAY);
+});
+
+test('inline play toggles playing state without opening the popover', async ({ page }) => {
+  const root = page.locator('[data-ayah]');
+  const play = page.locator('.ayah__play');
+  await play.click();
+  await expect(root).toHaveAttribute('data-playing', 'true');
+  await expect(play).toHaveAttribute('aria-label', 'Pause recitation of Yusuf 12:18');
+  await expect(page.locator('.ayah__pop-play')).toHaveAttribute('aria-label', /^Pause/);
+  await expect(page.locator('.ayah__pop')).toHaveAttribute('data-state', 'closed');
+  expect(
+    await page.evaluate(() => window.__ayahAudio.map((a) => ({ preload: a.preload, src: a.src }))),
+  ).toEqual([{ preload: 'none', src: 'https://everyayah.com/data/Ali_Jaber_64kbps/012018.mp3' }]);
+  await play.click();
+  await expect(root).not.toHaveAttribute('data-playing');
+  await expect(play).toHaveAttribute('aria-label', /^Play/);
+});
+
+test('only one verse plays at a time including cloned verses', async ({ page }) => {
+  await page.locator('[data-ayah]').evaluate((root) => {
+    const clone = root.cloneNode(true) as HTMLElement;
+    clone.dataset.audioSrc = 'https://everyayah.com/data/Ali_Jaber_64kbps/012053.mp3';
+    root.after(clone);
+  });
+  const roots = page.locator('[data-ayah]');
+  await roots.nth(0).locator('.ayah__play').click();
+  await expect(roots.nth(0)).toHaveAttribute('data-playing', 'true');
+  await roots.nth(1).locator('.ayah__play').click();
+  await expect(roots.nth(0)).not.toHaveAttribute('data-playing');
+  await expect(roots.nth(0).locator('.ayah__play')).toHaveAttribute('aria-label', /^Play/);
+  await expect(roots.nth(1)).toHaveAttribute('data-playing', 'true');
+  expect(await page.evaluate(() => window.__ayahAudio.length)).toBe(1);
+  expect(await page.evaluate(() => window.__ayahAudio[0].src)).toContain('012053.mp3');
+});
+
+test('popover stays open while playing but Escape can close it', async ({ page }) => {
+  await page.locator('.ayah__phrase').hover();
+  await page.waitForTimeout(400);
+  await page.locator('.ayah__pop-play').click();
+  await expect(page.locator('[data-ayah]')).toHaveAttribute('data-playing', 'true');
+  await page.locator('main h1').hover();
+  await page.waitForTimeout(500);
+  await expect(page.locator('.ayah__pop')).toHaveAttribute('data-state', 'open');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ayah__pop')).toHaveAttribute('data-state', 'closed');
+});
+
+test('language toggle swaps translations and pressed states', async ({ page }) => {
+  await page.locator('.ayah__phrase').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('[data-lang="ur"]').click();
+  await expect(page.locator('.ayah__ur')).toBeVisible();
+  await expect(page.locator('.ayah__en')).toBeHidden();
+  await expect(page.locator('[data-lang="ur"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-lang="en"]')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('[data-lang="en"]').click();
+  await expect(page.locator('.ayah__en')).toBeVisible();
+  await expect(page.locator('.ayah__ur')).toBeHidden();
+});
+
+test('maximise opens the panel; Escape, backdrop and close restore focus', async ({ page }) => {
+  await openPanel(page);
+  const dialog = page.locator('dialog.ayah-panel');
+  await expect(dialog).toContainText('so patience is most fitting');
+  await expect(dialog.locator('[lang="ur"].ayah-panel__ur')).not.toBeEmpty();
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator('.ayah__max')).toBeFocused();
+  await page.locator('.ayah__max').click();
+  await expect(dialog).toBeVisible();
+  await page.mouse.click(5, 5);
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator('.ayah__max')).toBeFocused();
+  await page.locator('.ayah__max').click();
+  await dialog.locator('.ayah-panel__close').click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator('.ayah__max')).toBeFocused();
+  await expect(page.locator('dialog.ayah-panel')).toHaveCount(1);
+});
+
+test('speed cycles and updates the shared audio', async ({ page }) => {
+  await openPanel(page);
+  const speed = page.locator('.ayah-panel__speed');
+  await expect(speed).toHaveText('1×');
+  for (const rate of [0.75, 1.25, 1]) {
+    await speed.click();
+    await expect(speed).toHaveText(`${rate}×`);
+    expect(await page.evaluate(() => window.__ayahAudio[0].playbackRate)).toBe(rate);
+  }
+});
+
+test('progress, seek, replay and ended synchronize both player views', async ({ page }) => {
+  await openPanel(page);
+  await page.locator('.ayah-panel__play').click();
+  await expect(page.locator('.ayah-panel__play')).toHaveAttribute('aria-label', /^Pause/);
+  await page.evaluate(() => {
+    const audio = window.__ayahAudio[0];
+    audio.currentTime = 15;
+    audio.dispatchEvent(new Event('timeupdate'));
+  });
+  await expect(page.locator('.ayah-panel__elapsed')).toHaveText('0:15');
+  await expect(page.locator('.ayah-panel__duration')).toHaveText('1:00');
+  await expect(page.locator('.ayah__time')).toHaveText('0:15 / 1:00');
+  await expect(page.locator('.ayah__fill')).toHaveAttribute('style', /width: 25%/);
+  await page.locator('.ayah-panel__seek').fill('50');
+  expect(await page.evaluate(() => window.__ayahAudio[0].currentTime)).toBe(30);
+  await expect(page.locator('.ayah-panel__elapsed')).toHaveText('0:30');
+  await page.locator('.ayah-panel__replay').click();
+  expect(await page.evaluate(() => window.__ayahAudio[0].currentTime)).toBe(0);
+  await page.evaluate(() => window.__ayahAudio[0].dispatchEvent(new Event('ended')));
+  await expect(page.locator('[data-ayah]')).not.toHaveAttribute('data-playing');
+  await expect(page.locator('.ayah-panel__play')).toHaveAttribute('aria-label', /^Play/);
+  await expect(page.locator('.ayah__play')).toHaveAttribute('aria-label', /^Play/);
+});
+
+test('failed playback clears playing state', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.evaluate(() => {
+    window.__playCalls = 0;
+    HTMLMediaElement.prototype.play = () => {
+      window.__playCalls++;
+      return Promise.reject(new Error('blocked'));
+    };
+  });
+  await page.locator('.ayah__play').click();
+  await expect.poll(() => page.evaluate(() => window.__playCalls)).toBe(1);
+  await expect(page.locator('[data-ayah]')).not.toHaveAttribute('data-playing');
+  await expect(page.locator('.ayah__play')).toHaveAttribute('aria-label', /^Play/);
+  expect(errors).toEqual([]);
+});
+
+for (const theme of ['light', 'dark']) {
+  test(`axe clean with panel open in ${theme}`, async ({ page }) => {
+    await page.evaluate(
+      (value) => document.documentElement.setAttribute('data-theme', value),
+      theme,
+    );
+    await openPanel(page);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await page.screenshot({
+      path: `.superpowers/sdd/2026-10-19-ayah-audio/panel-desktop-${theme}.png`,
+    });
+  });
+}
+
+test.describe('mobile panel', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  for (const theme of ['light', 'dark']) {
+    test(`translations stack and controls fit in ${theme}`, async ({ page }) => {
+      await page.evaluate(
+        (value) => document.documentElement.setAttribute('data-theme', value),
+        theme,
+      );
+      await openPanel(page);
+      const panel = page.locator('dialog.ayah-panel');
+      const box = (await panel.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(12);
+      expect(box.x + box.width).toBeLessThanOrEqual(378);
+      expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true,
+      );
+      const en = (await panel.locator('.ayah-panel__en').boundingBox())!;
+      const ur = (await panel.locator('.ayah-panel__ur').boundingBox())!;
+      expect(ur.y).toBeGreaterThan(en.y + en.height);
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+      await page.screenshot({
+        path: `.superpowers/sdd/2026-10-19-ayah-audio/panel-mobile-${theme}.png`,
+      });
+    });
+  }
 });
 
 test('popover IDs use deterministic sequence numbers', async ({ page }) => {

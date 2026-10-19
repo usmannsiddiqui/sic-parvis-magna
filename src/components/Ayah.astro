@@ -128,7 +128,145 @@ const popoverId = nextAyahId(surah, ayah);
   let activeRoot: HTMLElement | null = null;
   let hoverRoot: HTMLElement | null = null;
   let pinnedRoot: HTMLElement | null = null;
+  const audio = new Audio();
+  audio.preload = 'none';
+  let audioRoot: HTMLElement | null = null;
+  let playRequest = 0;
+  let panel: HTMLDialogElement | null = null;
+  let panelRoot: HTMLElement | null = null;
   const timers = new WeakMap<HTMLElement, { open?: number; close?: number }>();
+
+  function updatePlayButton(button: HTMLButtonElement, playing: boolean) {
+    button.setAttribute(
+      'aria-label',
+      (button.getAttribute('aria-label') ?? '').replace(
+        /^(Play|Pause)/,
+        playing ? 'Pause' : 'Play',
+      ),
+    );
+    button
+      .querySelector('path')
+      ?.setAttribute('d', playing ? 'M1 0h3v10H1zM6 0h3v10H6z' : 'M1 0l9 5-9 5z');
+  }
+
+  function setPlaying(root: HTMLElement, playing: boolean) {
+    if (playing) root.dataset.playing = 'true';
+    else delete root.dataset.playing;
+    root
+      .querySelectorAll<HTMLButtonElement>('.ayah__play, .ayah__pop-play')
+      .forEach((button) => updatePlayButton(button, playing));
+    if (panelRoot === root && panel) {
+      panel
+        .querySelectorAll<HTMLButtonElement>('.ayah-panel__play')
+        .forEach((button) => updatePlayButton(button, playing));
+    }
+  }
+
+  function timeLabel(seconds: number) {
+    const value = Number.isFinite(seconds) ? Math.max(0, Math.floor(seconds)) : 0;
+    return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`;
+  }
+
+  function updateProgress() {
+    const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+    const progress = duration > 0 ? Math.min(100, (audio.currentTime / duration) * 100) : 0;
+    if (audioRoot) {
+      audioRoot.querySelector<HTMLElement>('.ayah__fill')!.style.width = `${progress}%`;
+      audioRoot.querySelector<HTMLElement>('.ayah__time')!.textContent =
+        `${timeLabel(audio.currentTime)} / ${timeLabel(duration)}`;
+    }
+    if (panel && panelRoot) {
+      const matches = panelRoot === audioRoot;
+      panel.querySelector<HTMLElement>('.ayah-panel__elapsed')!.textContent = timeLabel(
+        matches ? audio.currentTime : 0,
+      );
+      panel.querySelector<HTMLElement>('.ayah-panel__duration')!.textContent = timeLabel(
+        matches ? duration : 0,
+      );
+      panel.querySelector<HTMLInputElement>('.ayah-panel__seek')!.value = String(
+        matches ? progress : 0,
+      );
+      panel.querySelector<HTMLElement>('.ayah-panel__speed')!.textContent =
+        `${audio.playbackRate}×`;
+    }
+  }
+
+  function selectAudio(root: HTMLElement) {
+    if (audioRoot === root) return;
+    audio.pause();
+    if (audioRoot) setPlaying(audioRoot, false);
+    audioRoot = root;
+    audio.src = root.dataset.audioSrc!;
+    audio.currentTime = 0;
+  }
+
+  async function play(root: HTMLElement) {
+    const request = ++playRequest;
+    selectAudio(root);
+    document
+      .querySelectorAll<HTMLElement>('[data-ayah]')
+      .forEach((other) => setPlaying(other, other === root));
+    cancelTimers(root);
+    updateProgress();
+    try {
+      await audio.play();
+    } catch {
+      // A blocked or failed request must not leave a false pause icon.
+      if (request === playRequest && audioRoot === root) setPlaying(root, false);
+    }
+  }
+
+  function toggleAudio(root: HTMLElement) {
+    if (audioRoot === root && root.dataset.playing === 'true') {
+      ++playRequest;
+      audio.pause();
+    } else void play(root);
+  }
+
+  function scheduleClose(root: HTMLElement) {
+    cancelTimers(root);
+    if (
+      pinnedRoot === root ||
+      root.dataset.playing === 'true' ||
+      (panel?.open && panelRoot === root)
+    )
+      return;
+    timers.set(root, { close: window.setTimeout(() => close(root), 300) });
+  }
+
+  for (const name of ['pause', 'ended', 'error']) {
+    audio.addEventListener(name, () => {
+      if (!audioRoot) return;
+      setPlaying(audioRoot, false);
+      if (activeRoot === audioRoot && !audioRoot.matches(':hover')) scheduleClose(audioRoot);
+    });
+  }
+  for (const name of ['timeupdate', 'loadedmetadata', 'durationchange']) {
+    audio.addEventListener(name, updateProgress);
+  }
+
+  function maximise(root: HTMLElement) {
+    cancelTimers(root);
+    pinnedRoot = root;
+    if (!panel) {
+      panel = document.createElement('dialog');
+      panel.className = 'ayah-panel';
+      document.body.append(panel);
+      panel.addEventListener('close', () => {
+        if (!panelRoot) return;
+        open(panelRoot);
+        pinnedRoot = panelRoot;
+        panelRoot.querySelector<HTMLElement>('.ayah__max')!.focus({ preventScroll: true });
+      });
+    }
+    panelRoot = root;
+    const template = root.querySelector<HTMLTemplateElement>('.ayah__panel-tpl')!;
+    panel.replaceChildren(template.content.cloneNode(true));
+    panel.setAttribute('aria-label', root.querySelector('.ayah__pop')!.getAttribute('aria-label')!);
+    setPlaying(root, root.dataset.playing === 'true');
+    updateProgress();
+    panel.showModal();
+  }
 
   function cancelTimers(root: HTMLElement) {
     const pending = timers.get(root);
@@ -180,9 +318,57 @@ const popoverId = nextAyahId(surah, ayah);
   }
 
   document.addEventListener('click', (event) => {
-    const phrase = (event.target as Element).closest('.ayah__phrase');
-    const root = phrase?.closest<HTMLElement>('[data-ayah]');
+    const target = event.target as Element;
+    if (panel?.open && target === panel) {
+      const box = panel.getBoundingClientRect();
+      if (
+        event.clientX < box.left ||
+        event.clientX > box.right ||
+        event.clientY < box.top ||
+        event.clientY > box.bottom
+      )
+        panel.close();
+      return;
+    }
+    const root =
+      target.closest<HTMLElement>('[data-ayah]') ??
+      (target.closest('.ayah-panel') ? panelRoot : null);
     if (!root) return;
+    if (target.closest('.ayah__play, .ayah__pop-play, .ayah-panel__play')) {
+      toggleAudio(root);
+      return;
+    }
+    if (target.closest('.ayah__max')) {
+      maximise(root);
+      return;
+    }
+    if (target.closest('.ayah-panel__close')) {
+      panel?.close();
+      return;
+    }
+    if (target.closest('.ayah-panel__replay')) {
+      selectAudio(root);
+      audio.currentTime = 0;
+      void play(root);
+      return;
+    }
+    if (target.closest('.ayah-panel__speed')) {
+      const rates = [1, 0.75, 1.25];
+      audio.playbackRate = rates[(rates.indexOf(audio.playbackRate) + 1) % rates.length];
+      updateProgress();
+      return;
+    }
+    const language = target.closest<HTMLButtonElement>('[data-lang]');
+    if (language) {
+      root
+        .querySelectorAll<HTMLButtonElement>('[data-lang]')
+        .forEach((button) => button.setAttribute('aria-pressed', String(button === language)));
+      root.querySelector<HTMLElement>('.ayah__en')!.hidden = language.dataset.lang !== 'en';
+      root.querySelector<HTMLElement>('.ayah__ur')!.hidden = language.dataset.lang !== 'ur';
+      position(root);
+      return;
+    }
+    if (!target.closest('.ayah__phrase')) return;
     const mouseClick = event instanceof PointerEvent && event.pointerType === 'mouse';
     if (mouseClick && activeRoot === root && hoverRoot === root) {
       cancelTimers(root);
@@ -194,6 +380,7 @@ const popoverId = nextAyahId(surah, ayah);
     }
   });
   document.addEventListener('keydown', (event) => {
+    if (panel?.open) return; // Native dialog Escape handling restores focus via close.
     if (event.key === 'Escape' && activeRoot) {
       event.preventDefault();
       close(activeRoot, { returnFocus: true });
@@ -207,7 +394,22 @@ const popoverId = nextAyahId(surah, ayah);
     }
   });
   document.addEventListener('pointerdown', (event) => {
+    if (panel?.open) return;
     if (activeRoot && !activeRoot.contains(event.target as Node)) close(activeRoot);
+  });
+
+  document.addEventListener('input', (event) => {
+    const input = event.target;
+    if (
+      !(input instanceof HTMLInputElement) ||
+      !input.matches('.ayah-panel__seek') ||
+      panelRoot !== audioRoot
+    )
+      return;
+    if (Number.isFinite(audio.duration)) {
+      audio.currentTime = (Number(input.value) / 100) * audio.duration;
+      updateProgress();
+    }
   });
 
   if (matchMedia('(hover: hover)').matches) {
@@ -232,9 +434,7 @@ const popoverId = nextAyahId(surah, ayah);
         if (!(event.target instanceof Element) || event.pointerType === 'touch') return;
         if (!event.target.matches('.ayah__phrase, .ayah__pop')) return;
         const root = event.target.closest<HTMLElement>('[data-ayah]')!;
-        cancelTimers(root);
-        if (pinnedRoot === root) return;
-        timers.set(root, { close: window.setTimeout(() => close(root), 300) });
+        scheduleClose(root);
       },
       true,
     );
